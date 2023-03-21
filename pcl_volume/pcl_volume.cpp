@@ -3,6 +3,7 @@
 #include <vtkTriangleFilter.h>
 #include <vtkMassProperties.h>
 #include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
 //可视化相关头文件
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
@@ -17,10 +18,34 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 
 using namespace std;
 
-int main(int argc, char** argv)
+void volume_demo()
+{
+    vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+    sphereSource->SetRadius(1);
+    sphereSource->SetPhiResolution(21);
+    sphereSource->SetThetaResolution(41);
+    sphereSource->Update();
+
+    vtkSmartPointer< vtkTriangleFilter > triangleFilter= vtkSmartPointer< vtkTriangleFilter >::New();
+    triangleFilter->SetInputData(sphereSource->GetOutput());
+    triangleFilter->Update();
+
+    vtkSmartPointer< vtkMassProperties > polygonProperties = vtkSmartPointer< vtkMassProperties >::New();
+    polygonProperties->SetInputData(triangleFilter->GetOutput());
+    polygonProperties->Update();
+
+    double area = polygonProperties->GetSurfaceArea();
+    double vol = polygonProperties->GetVolume();
+
+	cout << "体积为：" << vol << endl;
+	cout << "表面积为：" << area << endl;
+
+}
+
+void volume_cal()
 {
     vtkSmartPointer<vtkPLYReader> reader = vtkSmartPointer<vtkPLYReader>::New();
-    reader->SetFileName("/home/wanyel/vs_code/test_pcl/imgs/test_ply.ply");
+    reader->SetFileName("/home/wanyel/vs_code/test_pcl/imgs/cloud/sphere_mesh.ply");
     reader->Update();
 	vtkSmartPointer<vtkTriangleFilter> tri = vtkSmartPointer<vtkTriangleFilter>::New();
 	tri->SetInputData(reader->GetOutput());
@@ -36,6 +61,7 @@ int main(int argc, char** argv)
 	cout << "体积为：" << vol << endl;
 	cout << "表面积为：" << area << endl;
 	//============================可视化==========================
+    // 半径是R的圆球的体积计算公式是：：V＝4πR^3 / 3   半径是R的圆球的面积公式：S=4πR^2
 	//---------------用于渲染多边形几何数据-------------------
 	vtkSmartPointer<vtkPolyDataMapper> cylinderMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 	cylinderMapper->SetInputConnection(reader->GetOutputPort()); 
@@ -62,6 +88,12 @@ int main(int argc, char** argv)
 	//======================可视化结束===========================
     // system("pause");
 
-    return (0);
+    // return (0);
+}
+
+int main(int argc, char** argv)
+{
+    // volume_demo();
+    volume_cal();
 }
 

@@ -31,18 +31,20 @@ void viewerPsycho (pcl::visualization::PCLVisualizer& viewer)
 int main ()
 {
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZRGBA>);
-    pcl::io::loadPCDFile ("/home/wanyel/vs_code/test_pcl/imgs/2022_12_02_13_04_21_396.pcd", *cloud);
+    pcl::io::loadPCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/uniform_sphere.pcd", *cloud);
 
     pcl::visualization::CloudViewer viewer("Cloud Viewer");
   
     //blocks until the cloud is actually rendered
     viewer.showCloud(cloud);
+    // pcl::visualization::PCLVisualizer viewer_b;
+    // viewer_b.setBackgroundColor (0, 238, 41);
  
     //use the following functions to get access to the underlying more advanced/powerful
     //PCLVisualizer
   
     //This will only get called once
-    // viewer.runOnVisualizationThreadOnce (viewerOneOff);
+    viewer.runOnVisualizationThreadOnce (viewerOneOff);
  
     //This will get called once per visualization iteration
     viewer.runOnVisualizationThread (viewerPsycho);
@@ -52,7 +54,7 @@ int main ()
     //FIXME: Note that this is running in a separate thread from viewerPsycho
     //and you should guard against race conditions yourself...
     user_data++;
-    std::cout << user_data << std::endl;
+    // std::cout << user_data << std::endl;
     }
     return 0;
 }
