@@ -22,23 +22,27 @@ void volume_demo()
 {
     vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
     sphereSource->SetRadius(1);
-    sphereSource->SetPhiResolution(21);
-    sphereSource->SetThetaResolution(41);
+    sphereSource->SetPhiResolution(100);
+    sphereSource->SetThetaResolution(100);
     sphereSource->Update();
 
-    vtkSmartPointer< vtkTriangleFilter > triangleFilter= vtkSmartPointer< vtkTriangleFilter >::New();
+    vtkSmartPointer<vtkTriangleFilter> triangleFilter= vtkSmartPointer<vtkTriangleFilter>::New();
     triangleFilter->SetInputData(sphereSource->GetOutput());
     triangleFilter->Update();
 
-    vtkSmartPointer< vtkMassProperties > polygonProperties = vtkSmartPointer< vtkMassProperties >::New();
+    vtkSmartPointer<vtkMassProperties> polygonProperties = vtkSmartPointer<vtkMassProperties>::New();
     polygonProperties->SetInputData(triangleFilter->GetOutput());
     polygonProperties->Update();
 
     double area = polygonProperties->GetSurfaceArea();
     double vol = polygonProperties->GetVolume();
+    double maxArea = polygonProperties->GetMaxCellArea();//最大单元面积
+	double minArea = polygonProperties->GetMinCellArea();//最小单元面积
 
-	cout << "体积为：" << vol << endl;
-	cout << "表面积为：" << area << endl;
+	cout << "最大单元面积：" << maxArea << endl;
+	cout << "最小单元面积：" << minArea << endl;
+	cout << "计算体积为：" << vol << endl;
+	cout << "计算表面积为：" << area << endl;
 
 }
 
@@ -54,12 +58,12 @@ void volume_cal()
 	poly->SetInputData(tri->GetOutput());
 	poly->Update();
 
-	double vol = poly->GetVolume();//体积
-	double area = poly->GetSurfaceArea();//表面积
-    double maxArea = poly->GetMaxCellArea();//最大单元面积
-	double minArea = poly->GetMinCellArea();//最小单元面积
-	cout << "体积为：" << vol << endl;
-	cout << "表面积为：" << area << endl;
+	double vol = poly->GetVolume();             //体积
+	double area = poly->GetSurfaceArea();       //表面积
+    double maxArea = poly->GetMaxCellArea();    //最大单元面积
+	double minArea = poly->GetMinCellArea();    //最小单元面积
+	cout << "计算体积为：" << vol << endl;
+	cout << "计算表面积为：" << area << endl;
 	//============================可视化==========================
     // 半径是R的圆球的体积计算公式是：：V＝4πR^3 / 3   半径是R的圆球的面积公式：S=4πR^2
 	//---------------用于渲染多边形几何数据-------------------
@@ -93,7 +97,7 @@ void volume_cal()
 
 int main(int argc, char** argv)
 {
-    // volume_demo();
-    volume_cal();
+    volume_demo();
+    // volume_cal();
 }
 
