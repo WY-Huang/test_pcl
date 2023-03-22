@@ -19,6 +19,7 @@ VTK_MODULE_INIT(vtkInteractionStyle);
 
 using namespace std;
 
+// 球面体积及面积计算demo
 void volume_demo()
 {
     vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
@@ -47,6 +48,7 @@ void volume_demo()
 
 }
 
+// 计算网格化点云的体积及面积
 void volume_cal(double &vol_std, double &area_std)
 {
     vtkSmartPointer<vtkPLYReader> reader = vtkSmartPointer<vtkPLYReader>::New();
@@ -97,7 +99,6 @@ void volume_cal(double &vol_std, double &area_std)
 	iren->Start();
 	//======================可视化结束===========================
     // system("pause");
-
     // return (0);
 }
 

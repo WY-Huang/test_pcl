@@ -29,7 +29,7 @@
 typedef pcl::PointXYZ PointT;
 using namespace std;
 
-
+// 生成球面点云，随机分布
 void generate_sphere()
 {
 
@@ -60,7 +60,6 @@ void generate_sphere()
 		// boost::this_thread::sleep(boost::posix_time::microseconds(100000));
         std::this_thread::sleep_for(std::chrono::microseconds(100000));
 	}
-
 }
 
 
@@ -101,7 +100,7 @@ void create_ellipse_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& point_clo
     point_cloud_ptr->height = 1;
 }
 
-//构造圆柱体点云  
+//构造圆柱面点云  
 void create_cylinder_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& basic_cloud_ptr)
 {
     uint8_t r(255), g(15), b(15);
@@ -135,7 +134,7 @@ void create_cylinder_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& basic_cl
     }
 }
 
-//构造球体点云  
+//构造球面点云  
 void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_ptr)
 {
     uint8_t r(255), g(15), b(15);
@@ -182,7 +181,7 @@ void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_
     }
 }
 
-
+// 生成球体点云，随机实体
 void generate_uniform_sphere()
 {
   // 定义球体参数
