@@ -220,6 +220,56 @@ void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_
     }
 }
 
+// 构造椭球面点云 spheroid 
+void creat_spheroid_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_ptr)
+{
+    uint8_t r(255), g(15), b(15);
+    float r_a = 5.0;
+    float r_b = 4.0;
+    float r_c = 3.0;
+
+    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 0.5)
+    {
+        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 1.0)
+        {
+            pcl::PointXYZRGB basic_point;
+
+            basic_point.x = r_a * sinf(pcl::deg2rad(angle1)) * cosf(pcl::deg2rad(angle2));
+            basic_point.y = r_b * sinf(pcl::deg2rad(angle1)) * sinf(pcl::deg2rad(angle2));
+            basic_point.z = r_c * cosf(pcl::deg2rad(angle1));
+
+            // Add noise
+            int add_noise = 1;
+            if (add_noise)
+            {
+                basic_point.x = basic_point.x + 0.01 * rand() / double(RAND_MAX);
+                basic_point.y = basic_point.y + 0.01 * rand() / double(RAND_MAX);
+                basic_point.z = basic_point.z + 0.01 * rand() / double(RAND_MAX);
+            }
+
+            uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
+                static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
+            basic_point.rgb = *reinterpret_cast<float*>(&rgb);
+            basic_cloud_ptr->points.push_back(basic_point);
+
+        }
+        if (r_c != 0.0)
+        {
+            r -= 12;
+            g += 12;
+        }
+        else
+        {
+            g -= 12;
+            b += 12;
+        }
+
+        basic_cloud_ptr->width = (int)basic_cloud_ptr->points.size();
+        basic_cloud_ptr->height = 1;
+    }
+}
+
+
 
 int main(int argc, char** argv)
 {
@@ -237,7 +287,8 @@ int main(int argc, char** argv)
 
         // create_ellipse_pointcloud(cloud_xyzrgb);
         // create_cylinder_pointcloud(cloud_xyzrgb);
-        creat_sphere_pointcloud(cloud_xyzrgb);
+        // creat_sphere_pointcloud(cloud_xyzrgb);
+        creat_spheroid_pointcloud(cloud_xyzrgb);
 
         pcl::copyPointCloud(*cloud_xyzrgb, *cloud);
         pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_sphere.pcd", *cloud);

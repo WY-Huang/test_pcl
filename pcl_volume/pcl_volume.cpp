@@ -1,6 +1,5 @@
 #include <iostream>
 #include <math.h>
-
 #include <vtkPLYReader.h>
 #include <vtkTriangleFilter.h>
 #include <vtkMassProperties.h>
@@ -105,9 +104,13 @@ void volume_cal(double &vol_std, double &area_std)
 
 int main(int argc, char** argv)
 {
+    // 球体体积及表面积
     double r = 1.0;
     double vol_std = 4 * M_PI * r * r * r / 3;
     double area_std = 4 * M_PI * r * r;
+
+    // 椭球体体积
+    double vol_std_spheroid = 4 * M_PI * 5 * 4 * 3 / 3;
 
     // 梯形台尺寸：66.61*38.85 20.33*20.28 19.50    V=[S1+S2+√(S1*S2)]*h/3 
     double vol_std_prism = (66.61*38.85 + 20.33*20.28 + sqrt(66.61*38.85 + 20.33*20.28)) * 19.50 / 3;
@@ -115,10 +118,12 @@ int main(int argc, char** argv)
 
     cout << "半径为1的球体标准体积：" << vol_std << endl;
     cout << "半径为1的球体标准表面积：" << area_std << endl;
+    cout << "半轴长为3，4，5的椭球体标准体积：" << vol_std_spheroid << endl;
     cout << "===============================" << endl;
     // volume_demo();
     // cout << "===============================" << endl;
     volume_cal(vol_std, area_std);
+
 
 }
 
