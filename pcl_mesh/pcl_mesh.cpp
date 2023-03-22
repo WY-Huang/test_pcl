@@ -44,7 +44,7 @@ void generate_sphere()
 	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::io::vtkPolyDataToPointCloud(polydata, *cloud);
 	pcl::PCDWriter w;
-	w.writeBinaryCompressed("/home/wanyel/vs_code/test_pcl/imgs/sphere.pcd", *cloud);
+	w.writeBinaryCompressed("/home/wanyel/vs_code/test_pcl/imgs/srand_sphere.pcd", *cloud);
 	// -------------------------------结果可视化-------------------------------
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
 	viewer->setBackgroundColor(0, 0, 0);
@@ -237,8 +237,8 @@ int main(int argc, char** argv)
         // generate_uniform_sphere();
         pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb(new pcl::PointCloud<pcl::PointXYZRGB>);
 
-        // create_ellipse_pointcloud(cloud_xyz);
-        // create_cylinder_pointcloud(cloud_xyz);
+        // create_ellipse_pointcloud(cloud_xyzrgb);
+        // create_cylinder_pointcloud(cloud_xyzrgb);
         creat_sphere_pointcloud(cloud_xyzrgb);
 
         pcl::copyPointCloud(*cloud_xyzrgb, *cloud);
@@ -247,7 +247,7 @@ int main(int argc, char** argv)
     else
     {
         // 加载规则形状点云
-        if (pcl::io::loadPCDFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_final.pcd", *cloud) == -1)
+        if (pcl::io::loadPCDFile("/home/wanyel/vs_code/test_pcl/imgs/raw_pcd/2022_09_26_08_41_08_601_final.pcd", *cloud) == -1)
         {
             cout << "点云数据读取失败！" << endl;
         }
@@ -261,6 +261,7 @@ int main(int argc, char** argv)
     downSampled.setInputCloud (cloud);                  // 设置需要过滤的点云给滤波对象
     downSampled.setLeafSize (0.01f, 0.01f, 0.01f);      // 设置滤波时创建的体素体积为1cm的立方体
     downSampled.filter (*cloud_downSampled);            // 执行滤波处理，存储输出
+    std::cout << "DownSampled points number: " << cloud_downSampled->points.size() << std::endl;
     pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_1_downsampledPC.pcd", *cloud_downSampled);
 
 	// 2）统计滤波
@@ -269,6 +270,7 @@ int main(int argc, char** argv)
     statisOutlierRemoval.setMeanK (50);                                // 设置在进行统计时考虑查询点临近点数
     statisOutlierRemoval.setStddevMulThresh (3.0);                     // 设置判断是否为离群点的阀值:均值+1.0*标准差
     statisOutlierRemoval.filter (*cloud_filtered);                     // 滤波结果存储到cloud_filtered
+    std::cout << "Cloud_filtered points number: " << cloud_filtered->points.size() << std::endl;
     pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_2_filteredPC.pcd", *cloud_filtered);
 
 	// 3）对点云重采样  
@@ -284,7 +286,7 @@ int main(int argc, char** argv)
     mls.process(mls_point);                         // 输出
     // 输出重采样结果
     cloud_smoothed = mls_point.makeShared();
-    std::cout<<"cloud_smoothed: "<<cloud_smoothed->size() <<std::endl;
+    std::cout<<"Cloud_smoothed: "<<cloud_smoothed->size() <<std::endl;
     //save cloud_smoothed
     pcl::io::savePCDFileASCII("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_3_smoothed.pcd",*cloud_smoothed);
 
@@ -300,7 +302,7 @@ int main(int argc, char** argv)
     normalEstimation.compute(*normals);                                         // 计算法线
     // 输出法线
     std::cout<<"normals: "<<normals->size()<<", "<<"normals fields: "<<pcl::getFieldsList(*normals)<<std::endl;
-    pcl::io::savePCDFileASCII("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_4_normals.pcd",*normals);
+    // pcl::io::savePCDFileASCII("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_4_normals.pcd",*normals);
 	
 	// 将点云位姿、颜色、法线信息连接到一起
     pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
@@ -337,7 +339,7 @@ int main(int argc, char** argv)
         pn.performReconstruction(triangles);
 
         //保存网格图
-        pcl::io::savePLYFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/poisson_mesh.ply", triangles);
+        pcl::io::savePLYFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/poisson_5_mesh.ply", triangles);
     }
     else
     {
@@ -360,7 +362,7 @@ int main(int argc, char** argv)
         gp3.reconstruct (triangles);  //重建提取三角化
 
         // 保存网格图
-        pcl::io::saveVTKFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/greedy_mesh.vtk",triangles);
+        pcl::io::saveVTKFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/greedy_mesh.vtk", triangles);
         pcl::io::savePLYFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/greedy_mesh.ply", triangles);
     }
 	

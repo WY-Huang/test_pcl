@@ -33,17 +33,17 @@ int main()
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     creat_plane_pointcloud(cloud);
 
-    pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_plane.pcd", *cloud);
+    pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/raw_pcd/2022_09_26_08_41_08_601_plane.pcd", *cloud);
 
     // 点云读取及合并
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_a(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>);
 
-    if (pcl::io::loadPCDFile("/home/wanyel/vs_code/test_pcl/imgs/2022_09_26_08_41_08_601_mod1.pcd", *cloud_a) == -1)
+    if (pcl::io::loadPCDFile("/home/wanyel/vs_code/test_pcl/imgs/raw_pcd/2022_09_26_08_41_08_601_mod1.pcd", *cloud_a) == -1)
     {
         cout << "点云数据读取失败！" << endl;
     }
 
     *cloud_final = (*cloud) + (*cloud_a);
-    pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_final.pcd", *cloud_final);
+    pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/raw_pcd/2022_09_26_08_41_08_601_final.pcd", *cloud_final);
 }

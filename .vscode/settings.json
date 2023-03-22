@@ -58,6 +58,10 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "condition_variable": "cpp"
+        "condition_variable": "cpp",
+        "strstream": "cpp",
+        "mutex": "cpp",
+        "cfenv": "cpp",
+        "valarray": "cpp"
     }
 }

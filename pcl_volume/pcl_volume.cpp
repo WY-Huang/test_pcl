@@ -52,7 +52,7 @@ void volume_demo()
 void volume_cal(double &vol_std, double &area_std)
 {
     vtkSmartPointer<vtkPLYReader> reader = vtkSmartPointer<vtkPLYReader>::New();
-    reader->SetFileName("/home/wanyel/vs_code/test_pcl/imgs/cloud/poisson_mesh.ply");
+    reader->SetFileName("/home/wanyel/vs_code/test_pcl/imgs/cloud/poisson_5_mesh.ply");
     reader->Update();
 	vtkSmartPointer<vtkTriangleFilter> tri = vtkSmartPointer<vtkTriangleFilter>::New();
 	tri->SetInputData(reader->GetOutput());
