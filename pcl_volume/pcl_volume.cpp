@@ -112,8 +112,8 @@ int main(int argc, char** argv)
     double vol_std_prism = (66.61*38.85 + 20.33*20.28 + sqrt(66.61*38.85 + 20.33*20.28)) * 19.50 / 3;
     cout << "梯形台理论体积：" << vol_std_prism << endl;
 
-    cout << "半径为1的标准体积：" << vol_std << endl;
-    cout << "半径为1的标准表面积：" << area_std << endl;
+    cout << "半径为1的球体标准体积：" << vol_std << endl;
+    cout << "半径为1的球体标准表面积：" << area_std << endl;
     cout << "===============================" << endl;
     volume_demo();
     cout << "===============================" << endl;

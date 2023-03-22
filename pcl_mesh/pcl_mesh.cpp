@@ -1,5 +1,4 @@
 #include <pcl/point_types.h>
-// #include <pcl/io/io.h>
 #include <pcl/common/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/vtk_io.h>
@@ -62,126 +61,7 @@ void generate_sphere()
 	}
 }
 
-
-// 以椭圆为边线沿z轴拉伸获取其点云，并赋予红绿蓝渐变色。
-void create_ellipse_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& point_cloud_ptr) {
-    
-    uint8_t r(255), g(15), b(15);
-    for (float z(-1.0); z <= 1.0; z += 0.05)
-    {
-        for (float angle(0.0); angle <= 360.0; angle += 5.0)
-        {
-            pcl::PointXYZ basic_point;
-            basic_point.x = 0.5 * cosf(float(angle / 180 * M_PI));
-            basic_point.y = sinf(float(angle / 180 * M_PI));
-            basic_point.z = z;
-
-            pcl::PointXYZRGB point;
-            point.x = basic_point.x;
-            point.y = basic_point.y;
-            point.z = basic_point.z;
-            uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
-                static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
-            point.rgb = *reinterpret_cast<float*>(&rgb);
-            point_cloud_ptr->points.push_back(point);
-        }
-        if (z < 0.0)
-        {
-            r -= 12;
-            g += 12;
-        }
-        else
-        {
-            g -= 12;
-            b += 12;
-        }
-    }
-    point_cloud_ptr->width = (int)point_cloud_ptr->points.size();
-    point_cloud_ptr->height = 1;
-}
-
-//构造圆柱面点云  
-void create_cylinder_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& basic_cloud_ptr)
-{
-    uint8_t r(255), g(15), b(15);
-    for (float z = -1.0; z <= 1.0; z += 0.05)
-    {
-        for (float angle = 0.0; angle <= 360.0; angle += 5.0)
-        {
-            pcl::PointXYZRGB basic_point;
-
-            basic_point.x = cosf(pcl::deg2rad(angle));
-            basic_point.y = sinf(pcl::deg2rad(angle));
-            basic_point.z = z;
-            uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
-            static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
-            basic_point.rgb = *reinterpret_cast<float*>(&rgb);
-            basic_cloud_ptr->points.push_back(basic_point);
-        }
-        if (z < 0.0)
-        {
-            r -= 12;
-            g += 12;
-        }
-        else
-        {
-            g -= 12;
-            b += 12;
-        }
-
-        basic_cloud_ptr->width = (int)basic_cloud_ptr->points.size();
-        basic_cloud_ptr->height = 1;
-    }
-}
-
-//构造球面点云  
-void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_ptr)
-{
-    uint8_t r(255), g(15), b(15);
-    float radius = 1;
-
-    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 0.2)
-    {
-        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 1.0)
-        {
-            pcl::PointXYZRGB basic_point;
-
-            basic_point.x = radius * sinf(pcl::deg2rad(angle1)) * cosf(pcl::deg2rad(angle2));
-            basic_point.y = radius * sinf(pcl::deg2rad(angle1)) * sinf(pcl::deg2rad(angle2));
-            basic_point.z = radius * cosf(pcl::deg2rad(angle1));
-
-            // Add noise
-            int add_noise = 1;
-            if (add_noise)
-            {
-                basic_point.x = basic_point.x + 0.5 * rand() / double(RAND_MAX);
-                basic_point.y = basic_point.y + 0.2 * rand() / double(RAND_MAX);
-                basic_point.z = basic_point.z + 0.1 * rand() / double(RAND_MAX);
-            }
-
-            uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
-                static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
-            basic_point.rgb = *reinterpret_cast<float*>(&rgb);
-            basic_cloud_ptr->points.push_back(basic_point);
-
-        }
-        if (radius != 0.0)
-        {
-            r -= 12;
-            g += 12;
-        }
-        else
-        {
-            g -= 12;
-            b += 12;
-        }
-
-        basic_cloud_ptr->width = (int)basic_cloud_ptr->points.size();
-        basic_cloud_ptr->height = 1;
-    }
-}
-
-// 生成球体点云，随机实体
+// 生成球体点云，均匀实体
 void generate_uniform_sphere()
 {
   // 定义球体参数
@@ -224,31 +104,155 @@ void generate_uniform_sphere()
 
 }
 
+// 以椭圆为边线沿z轴拉伸获取其点云，并赋予红绿蓝渐变色。
+void create_ellipse_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& point_cloud_ptr) {
+    
+    uint8_t r(255), g(15), b(15);
+    for (float z(-1.0); z <= 1.0; z += 0.05)
+    {
+        for (float angle(0.0); angle <= 360.0; angle += 5.0)
+        {
+            pcl::PointXYZ basic_point;
+            basic_point.x = 0.5 * cosf(float(angle / 180 * M_PI));
+            basic_point.y = sinf(float(angle / 180 * M_PI));
+            basic_point.z = z;
+
+            pcl::PointXYZRGB point;
+            point.x = basic_point.x;
+            point.y = basic_point.y;
+            point.z = basic_point.z;
+            uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
+                static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
+            point.rgb = *reinterpret_cast<float*>(&rgb);
+            point_cloud_ptr->points.push_back(point);
+        }
+        if (z < 0.0)
+        {
+            r -= 12;
+            g += 12;
+        }
+        else
+        {
+            g -= 12;
+            b += 12;
+        }
+    }
+    point_cloud_ptr->width = (int)point_cloud_ptr->points.size();
+    point_cloud_ptr->height = 1;
+}
+
+// 构造圆柱面点云  
+void create_cylinder_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr& basic_cloud_ptr)
+{
+    uint8_t r(255), g(15), b(15);
+    for (float z = -1.0; z <= 1.0; z += 0.05)
+    {
+        for (float angle = 0.0; angle <= 360.0; angle += 5.0)
+        {
+            pcl::PointXYZRGB basic_point;
+
+            basic_point.x = cosf(pcl::deg2rad(angle));
+            basic_point.y = sinf(pcl::deg2rad(angle));
+            basic_point.z = z;
+            uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
+            static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
+            basic_point.rgb = *reinterpret_cast<float*>(&rgb);
+            basic_cloud_ptr->points.push_back(basic_point);
+        }
+        if (z < 0.0)
+        {
+            r -= 12;
+            g += 12;
+        }
+        else
+        {
+            g -= 12;
+            b += 12;
+        }
+
+        basic_cloud_ptr->width = (int)basic_cloud_ptr->points.size();
+        basic_cloud_ptr->height = 1;
+    }
+}
+
+// 构造球面点云  
+void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_ptr)
+{
+    uint8_t r(255), g(15), b(15);
+    float radius = 1;
+
+    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 0.2)
+    {
+        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 1.0)
+        {
+            pcl::PointXYZRGB basic_point;
+
+            basic_point.x = radius * sinf(pcl::deg2rad(angle1)) * cosf(pcl::deg2rad(angle2));
+            basic_point.y = radius * sinf(pcl::deg2rad(angle1)) * sinf(pcl::deg2rad(angle2));
+            basic_point.z = radius * cosf(pcl::deg2rad(angle1));
+
+            // Add noise
+            int add_noise = 1;
+            if (add_noise)
+            {
+                basic_point.x = basic_point.x + 0.01 * rand() / double(RAND_MAX);
+                basic_point.y = basic_point.y + 0.01 * rand() / double(RAND_MAX);
+                basic_point.z = basic_point.z + 0.01 * rand() / double(RAND_MAX);
+            }
+
+            uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
+                static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
+            basic_point.rgb = *reinterpret_cast<float*>(&rgb);
+            basic_cloud_ptr->points.push_back(basic_point);
+
+        }
+        if (radius != 0.0)
+        {
+            r -= 12;
+            g += 12;
+        }
+        else
+        {
+            g -= 12;
+            b += 12;
+        }
+
+        basic_cloud_ptr->width = (int)basic_cloud_ptr->points.size();
+        basic_cloud_ptr->height = 1;
+    }
+}
+
 
 int main(int argc, char** argv)
 {
-    // generate_sphere();
-    // generate_uniform_sphere();
-    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZRGB>);
-
-    //create_ellipse_pointcloud(cloud_xyz);
-    // create_cylinder_pointcloud(cloud_xyz);
-    // creat_sphere_pointcloud(cloud_xyz);
-	
-    // Load input file
-	pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
+    pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
     pcl::PointCloud<PointT>::Ptr cloud_downSampled(new pcl::PointCloud<PointT>);
 	pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>);
 	pcl::PointCloud<PointT>::Ptr cloud_smoothed(new pcl::PointCloud<PointT>);
-
-	if (pcl::io::loadPCDFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_final.pcd", *cloud) == -1)
+    
+    int generate = 1;
+    if (generate)
     {
-        cout << "点云数据读取失败！" << endl;
+        // generate_sphere();
+        // generate_uniform_sphere();
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyzrgb(new pcl::PointCloud<pcl::PointXYZRGB>);
+
+        // create_ellipse_pointcloud(cloud_xyz);
+        // create_cylinder_pointcloud(cloud_xyz);
+        creat_sphere_pointcloud(cloud_xyzrgb);
+
+        pcl::copyPointCloud(*cloud_xyzrgb, *cloud);
+        pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_sphere.pcd", *cloud);
     }
-
-    // pcl::copyPointCloud(*cloud_xyz, *cloud);
-    // pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_sphere.pcd", *cloud);
-
+    else
+    {
+        // 加载规则形状点云
+        if (pcl::io::loadPCDFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_final.pcd", *cloud) == -1)
+        {
+            cout << "点云数据读取失败！" << endl;
+        }
+    }
+	
     std::cout << "Orginal points number: " << cloud->points.size() << std::endl;
 
     /*==================================================================================*/
@@ -372,8 +376,8 @@ int main(int argc, char** argv)
 
     // 显示网格化结果
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
-    viewer->setBackgroundColor(0, 0, 0);  //
-    viewer->addPolygonMesh(triangles, "mesh");  //
+    viewer->setBackgroundColor(0, 0, 0);
+    viewer->addPolygonMesh(triangles, "mesh");
 
     while (!viewer->wasStopped())
     {
