@@ -1,9 +1,18 @@
+#include <chrono>
+#include <thread>
+#include <boost/thread/thread.hpp>
+
 #include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 #include <pcl/common/io.h>
+#include <pcl/common/random.h>
+#include <pcl/common/common_headers.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/vtk_io.h>
 #include <pcl/io/ply_io.h>
+#include <pcl/io/vtk_lib_io.h>
 #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/filters/radius_outlier_removal.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/filters/statistical_outlier_removal.h>
@@ -12,18 +21,7 @@
 #include <pcl/surface/gp3.h>
 #include <pcl/surface/poisson.h>
 
-#include <boost/thread/thread.hpp>
-#include <chrono>
-#include <thread>
-
 #include <vtkPointSource.h>
-#include <pcl/io/vtk_lib_io.h>
-
-#include <pcl/point_cloud.h>
-#include <pcl/common/common_headers.h>
-#include <pcl/visualization/pcl_visualizer.h>
-
-#include <pcl/common/random.h>
 
 typedef pcl::PointXYZ PointT;
 using namespace std;
@@ -181,9 +179,9 @@ void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_
     uint8_t r(255), g(15), b(15);
     float radius = 1;
 
-    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 0.2)
+    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 2)
     {
-        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 1.0)
+        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 10.0)
         {
             pcl::PointXYZRGB basic_point;
 

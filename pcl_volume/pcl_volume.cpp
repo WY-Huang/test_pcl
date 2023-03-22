@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+
 #include <vtkPLYReader.h>
 #include <vtkTriangleFilter.h>
 #include <vtkMassProperties.h>
@@ -115,11 +116,9 @@ int main(int argc, char** argv)
     cout << "半径为1的球体标准体积：" << vol_std << endl;
     cout << "半径为1的球体标准表面积：" << area_std << endl;
     cout << "===============================" << endl;
-    volume_demo();
-    cout << "===============================" << endl;
+    // volume_demo();
+    // cout << "===============================" << endl;
     volume_cal(vol_std, area_std);
-
-    
 
 }
 
