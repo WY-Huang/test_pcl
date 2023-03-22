@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 #include <vtkPLYReader.h>
 #include <vtkTriangleFilter.h>
 #include <vtkMassProperties.h>
@@ -46,10 +47,10 @@ void volume_demo()
 
 }
 
-void volume_cal()
+void volume_cal(double &vol_std, double &area_std)
 {
     vtkSmartPointer<vtkPLYReader> reader = vtkSmartPointer<vtkPLYReader>::New();
-    reader->SetFileName("/home/wanyel/vs_code/test_pcl/imgs/cloud/sphere_mesh.ply");
+    reader->SetFileName("/home/wanyel/vs_code/test_pcl/imgs/cloud/poisson_mesh.ply");
     reader->Update();
 	vtkSmartPointer<vtkTriangleFilter> tri = vtkSmartPointer<vtkTriangleFilter>::New();
 	tri->SetInputData(reader->GetOutput());
@@ -62,8 +63,13 @@ void volume_cal()
 	double area = poly->GetSurfaceArea();       //表面积
     double maxArea = poly->GetMaxCellArea();    //最大单元面积
 	double minArea = poly->GetMinCellArea();    //最小单元面积
-	cout << "计算体积为：" << vol << endl;
-	cout << "计算表面积为：" << area << endl;
+
+    double vol_err = fabs(vol_std - vol) / vol_std;
+    double area_err = fabs(area_std - area) / area;
+
+	cout << "计算体积为：" << vol << "\t误差为：" << (vol_std - vol) << "\t百分比为：" << vol_err << endl;
+	cout << "计算表面积为：" << area << "\t误差为：" << (area_std - area) << "\t百分比为：" << area_err << endl;
+
 	//============================可视化==========================
     // 半径是R的圆球的体积计算公式是：：V＝4πR^3 / 3   半径是R的圆球的面积公式：S=4πR^2
 	//---------------用于渲染多边形几何数据-------------------
@@ -97,7 +103,22 @@ void volume_cal()
 
 int main(int argc, char** argv)
 {
+    double r = 1.0;
+    double vol_std = 4 * M_PI * r * r * r / 3;
+    double area_std = 4 * M_PI * r * r;
+
+    // 梯形台尺寸：66.61*38.85 20.33*20.28 19.50    V=[S1+S2+√(S1*S2)]*h/3 
+    double vol_std_prism = (66.61*38.85 + 20.33*20.28 + sqrt(66.61*38.85 + 20.33*20.28)) * 19.50 / 3;
+    cout << "梯形台理论体积：" << vol_std_prism << endl;
+
+    cout << "半径为1的标准体积：" << vol_std << endl;
+    cout << "半径为1的标准表面积：" << area_std << endl;
+    cout << "===============================" << endl;
     volume_demo();
-    // volume_cal();
+    cout << "===============================" << endl;
+    volume_cal(vol_std, area_std);
+
+    
+
 }
 

@@ -141,7 +141,7 @@ void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_
     uint8_t r(255), g(15), b(15);
     float radius = 1;
 
-    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 1.0)
+    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 0.2)
     {
         for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 1.0)
         {
@@ -150,10 +150,21 @@ void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_
             basic_point.x = radius * sinf(pcl::deg2rad(angle1)) * cosf(pcl::deg2rad(angle2));
             basic_point.y = radius * sinf(pcl::deg2rad(angle1)) * sinf(pcl::deg2rad(angle2));
             basic_point.z = radius * cosf(pcl::deg2rad(angle1));
+
+            // Add noise
+            int add_noise = 1;
+            if (add_noise)
+            {
+                basic_point.x = basic_point.x + 0.5 * rand() / double(RAND_MAX);
+                basic_point.y = basic_point.y + 0.2 * rand() / double(RAND_MAX);
+                basic_point.z = basic_point.z + 0.1 * rand() / double(RAND_MAX);
+            }
+
             uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
                 static_cast<uint32_t>(g) << 8 | static_cast<uint32_t>(b));
             basic_point.rgb = *reinterpret_cast<float*>(&rgb);
             basic_cloud_ptr->points.push_back(basic_point);
+
         }
         if (radius != 0.0)
         {
@@ -219,11 +230,11 @@ int main(int argc, char** argv)
 {
     // generate_sphere();
     // generate_uniform_sphere();
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZRGB>);
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_xyz(new pcl::PointCloud<pcl::PointXYZRGB>);
 
     //create_ellipse_pointcloud(cloud_xyz);
     // create_cylinder_pointcloud(cloud_xyz);
-    creat_sphere_pointcloud(cloud_xyz);
+    // creat_sphere_pointcloud(cloud_xyz);
 	
     // Load input file
 	pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
@@ -231,61 +242,59 @@ int main(int argc, char** argv)
 	pcl::PointCloud<PointT>::Ptr cloud_filtered(new pcl::PointCloud<PointT>);
 	pcl::PointCloud<PointT>::Ptr cloud_smoothed(new pcl::PointCloud<PointT>);
 
-	// if (pcl::io::loadPCDFile("/home/wanyel/vs_code/test_pcl/imgs/sphere.pcd", *cloud) == -1)
-    // {
-    //     cout << "点云数据读取失败！" << endl;
-    // }
+	if (pcl::io::loadPCDFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_final.pcd", *cloud) == -1)
+    {
+        cout << "点云数据读取失败！" << endl;
+    }
 
-    pcl::copyPointCloud(*cloud_xyz, *cloud);
-    pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_sphere.pcd", *cloud);
+    // pcl::copyPointCloud(*cloud_xyz, *cloud);
+    // pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_sphere.pcd", *cloud);
 
     std::cout << "Orginal points number: " << cloud->points.size() << std::endl;
 
-   	// ----------------------开始你的代码--------------------------//
-	// 请参考之前文章中点云下采样，滤波、平滑等内容，以及PCL官网实现以下功能。
-	
-	// 下采样
-    pcl::VoxelGrid<PointT> downSampled;         //创建滤波对象
-    downSampled.setInputCloud (cloud);            //设置需要过滤的点云给滤波对象
-    downSampled.setLeafSize (0.01f, 0.01f, 0.01f);  //设置滤波时创建的体素体积为1cm的立方体
-    downSampled.filter (*cloud_downSampled);           //执行滤波处理，存储输出
+    /*==================================================================================*/
+	// 1）下采样
+    pcl::VoxelGrid<PointT> downSampled;                 // 创建滤波对象
+    downSampled.setInputCloud (cloud);                  // 设置需要过滤的点云给滤波对象
+    downSampled.setLeafSize (0.01f, 0.01f, 0.01f);      // 设置滤波时创建的体素体积为1cm的立方体
+    downSampled.filter (*cloud_downSampled);            // 执行滤波处理，存储输出
     pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_1_downsampledPC.pcd", *cloud_downSampled);
 
-	// 统计滤波
-    pcl::StatisticalOutlierRemoval<PointT> statisOutlierRemoval;       //创建滤波器对象
-    statisOutlierRemoval.setInputCloud (cloud_downSampled);            //设置待滤波的点云
-    statisOutlierRemoval.setMeanK (50);                                //设置在进行统计时考虑查询点临近点数
-    statisOutlierRemoval.setStddevMulThresh (3.0);                     //设置判断是否为离群点的阀值:均值+1.0*标准差
-    statisOutlierRemoval.filter (*cloud_filtered);                     //滤波结果存储到cloud_filtered
+	// 2）统计滤波
+    pcl::StatisticalOutlierRemoval<PointT> statisOutlierRemoval;       // 创建滤波器对象
+    statisOutlierRemoval.setInputCloud (cloud_downSampled);            // 设置待滤波的点云
+    statisOutlierRemoval.setMeanK (50);                                // 设置在进行统计时考虑查询点临近点数
+    statisOutlierRemoval.setStddevMulThresh (3.0);                     // 设置判断是否为离群点的阀值:均值+1.0*标准差
+    statisOutlierRemoval.filter (*cloud_filtered);                     // 滤波结果存储到cloud_filtered
     pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_2_filteredPC.pcd", *cloud_filtered);
 
-	// 对点云重采样  
+	// 3）对点云重采样  
     pcl::search::KdTree<PointT>::Ptr treeSampling (new pcl::search::KdTree<PointT>);// 创建用于最近邻搜索的KD-Tree
-    pcl::PointCloud<PointT> mls_point;    //输出MLS
-    pcl::MovingLeastSquares<PointT,PointT> mls; // 定义最小二乘实现的对象mls
-    mls.setComputeNormals(false);  //设置在最小二乘计算中是否需要存储计算的法线
-    mls.setInputCloud(cloud_filtered);         //设置待处理点云
-    mls.setPolynomialOrder(2);            // 拟合2阶多项式拟合
-    // mls.setPolynomialFit(false);     // 设置为false可以 加速 smooth
-    mls.setSearchMethod(treeSampling);         // 设置KD-Tree作为搜索方法
-    mls.setSearchRadius(0.05);           // 单位m.设置用于拟合的K近邻半径
-    mls.process(mls_point);                 //输出
+    pcl::PointCloud<PointT> mls_point;              // 输出MLS
+    pcl::MovingLeastSquares<PointT,PointT> mls;     // 定义最小二乘实现的对象mls
+    mls.setComputeNormals(false);                   // 设置在最小二乘计算中是否需要存储计算的法线
+    mls.setInputCloud(cloud_filtered);              // 设置待处理点云
+    mls.setPolynomialOrder(2);                      // 拟合2阶多项式拟合
+    // mls.setPolynomialFit(false);                 // 设置为false可以 加速 smooth
+    mls.setSearchMethod(treeSampling);              // 设置KD-Tree作为搜索方法
+    mls.setSearchRadius(0.05);                      // 单位m.设置用于拟合的K近邻半径
+    mls.process(mls_point);                         // 输出
     // 输出重采样结果
     cloud_smoothed = mls_point.makeShared();
     std::cout<<"cloud_smoothed: "<<cloud_smoothed->size() <<std::endl;
     //save cloud_smoothed
     pcl::io::savePCDFileASCII("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_3_smoothed.pcd",*cloud_smoothed);
 
-    // 法线估计
-    pcl::NormalEstimation<PointT,pcl::Normal> normalEstimation;             //创建法线估计的对象
-    normalEstimation.setInputCloud(cloud_smoothed);                         //输入点云
-    pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>); // 创建用于最近邻搜索的KD-Tree
+    // 4）法线估计
+    pcl::NormalEstimation<PointT,pcl::Normal> normalEstimation;                 // 创建法线估计的对象
+    normalEstimation.setInputCloud(cloud_smoothed);                             // 输入点云
+    pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);     // 创建用于最近邻搜索的KD-Tree
     normalEstimation.setSearchMethod(tree);
-    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>); // 定义输出的点云法线
+    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);// 定义输出的点云法线
     // K近邻确定方法，使用k个最近点，或者确定一个以r为半径的圆内的点集来确定都可以，两者选1即可
-    normalEstimation.setKSearch(10);                                        // 使用当前点周围最近的10个点
-    // normalEstimation.setRadiusSearch(0.03);                              //对于每一个点都用半径为3cm的近邻搜索方式
-    normalEstimation.compute(*normals);                                     //计算法线
+    normalEstimation.setKSearch(30);                                            // 使用当前点周围最近的10个点
+    // normalEstimation.setRadiusSearch(0.03);                                  // 对于每一个点都用半径为3cm的近邻搜索方式
+    normalEstimation.compute(*normals);                                         // 计算法线
     // 输出法线
     std::cout<<"normals: "<<normals->size()<<", "<<"normals fields: "<<pcl::getFieldsList(*normals)<<std::endl;
     pcl::io::savePCDFileASCII("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_4_normals.pcd",*normals);
@@ -295,38 +304,78 @@ int main(int argc, char** argv)
     pcl::concatenateFields(*cloud_smoothed, *normals, *cloud_with_normals);
     pcl::io::savePCDFileASCII("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_4_with_normals.pcd",*cloud_with_normals);
 	
-	// 贪心投影三角化
-    //定义搜索树对象
+    // 5)定义搜索树对象
     pcl::search::KdTree<pcl::PointNormal>::Ptr tree2(new pcl::search::KdTree<pcl::PointNormal>);
     tree2->setInputCloud(cloud_with_normals);
+    
+    pcl::PolygonMesh triangles ;            //创建多边形网格，用于存储结果
 
-    // 三角化
-    pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;   // 定义三角化对象
-    pcl::PolygonMesh triangles; //存储最终三角化的网络模型
+    int poisson = 1;
+    if (poisson)
+    {
+        //创建Poisson对象，并设置参数
+        pcl::Poisson<pcl::PointNormal> pn ;
+        pn.setConfidence(false);            // 是否使用法向量的大小作为置信信息。如果false，所有法向量均归一化。
+        pn.setDegree(2);                    // 设置参数degree[1,5],值越大越精细，耗时越久。
+        pn.setDepth(8);                     // 树的最大深度，求解2^d x 2^d x 2^d立方体元。由于八叉树自适应采样密度，指定值仅为最大深度。
+        pn.setIsoDivide(8);                 // 用于提取ISO等值面的算法的深度
+        pn.setManifold(false);              // 是否添加多边形的重心，当多边形三角化时。 设置流行标志，如果设置为true，则对多边形进行细分三角话时添加重心，设置false则不添加
+        pn.setOutputPolygons(false);        // 是否输出多边形网格（而不是三角化移动立方体的结果）
+        pn.setSamplesPerNode(3.0);          // 设置落入一个八叉树结点中的样本点的最小数量。无噪声，[1.0-5.0],有噪声[15.-20.]平滑
+        pn.setScale(1.25);                  // 设置用于重构的立方体直径和样本边界立方体直径的比率。
+        pn.setSolverDivide(8);              // 设置求解线性方程组的Gauss-Seidel迭代方法的深度
+        //pn.setIndices();
 
-    // 设置三角化参数
-    gp3.setSearchRadius(0.01);  //设置搜索时的半径，也就是KNN的球半径
-    gp3.setMu (2.5);  //设置样本点搜索其近邻点的最远距离为2.5倍（典型值2.5-3），这样使得算法自适应点云密度的变化
-    gp3.setMaximumNearestNeighbors (100);    //设置样本点最多可搜索的邻域个数，典型值是50-100
+        //设置搜索方法和输入点云
+        pn.setSearchMethod(tree2);
+        pn.setInputCloud(cloud_with_normals);
+        
+        //执行重构
+        pn.performReconstruction(triangles);
 
-    gp3.setMinimumAngle(M_PI/18); // 设置三角化后得到的三角形内角的最小的角度为10°
-    gp3.setMaximumAngle(2*M_PI/3); // 设置三角化后得到的三角形内角的最大角度为120°
+        //保存网格图
+        pcl::io::savePLYFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/poisson_mesh.ply", triangles);
+    }
+    else
+    {
+        // 贪婪三角化
+        pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;   // 定义三角化对象
 
-    gp3.setMaximumSurfaceAngle(M_PI/4); // 设置某点法线方向偏离样本点法线的最大角度45°，如果超过，连接时不考虑该点
-    gp3.setNormalConsistency(false);  //设置该参数为true保证法线朝向一致，设置为false的话不会进行法线一致性检查
+        // 设置三角化参数
+        gp3.setSearchRadius(0.1);  //设置搜索时的半径，也就是KNN的球半径
+        gp3.setMu (2.5);  //设置样本点搜索其近邻点的最远距离为2.5倍（典型值2.5-3），这样使得算法自适应点云密度的变化
+        gp3.setMaximumNearestNeighbors (100);    //设置样本点最多可搜索的邻域个数，典型值是50-100
 
-    gp3.setInputCloud (cloud_with_normals);     //设置输入点云为有向点云
-    gp3.setSearchMethod (tree2);   //设置搜索方式
-    gp3.reconstruct (triangles);  //重建提取三角化
+        // gp3.setMinimumAngle(M_PI/18); // 设置三角化后得到的三角形内角的最小的角度为10°
+        // gp3.setMaximumAngle(2*M_PI/3); // 设置三角化后得到的三角形内角的最大角度为120°
 
-    // 保存网格图
-    pcl::io::saveVTKFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/sphere_mesh.vtk",triangles);
-    pcl::io::savePLYFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/sphere_mesh.ply", triangles);
+        gp3.setMaximumSurfaceAngle(M_PI/2); // 设置某点法线方向偏离样本点法线的最大角度45°，如果超过，连接时不考虑该点
+        gp3.setNormalConsistency(false);  //设置该参数为true保证法线朝向一致，设置为false的话不会进行法线一致性检查
+
+        gp3.setInputCloud (cloud_with_normals);     //设置输入点云为有向点云
+        gp3.setSearchMethod (tree2);   //设置搜索方式
+        gp3.reconstruct (triangles);  //重建提取三角化
+
+        // 保存网格图
+        pcl::io::saveVTKFile("/home/wanyel/vs_code/test_pcl/imgs/cloud/greedy_mesh.vtk",triangles);
+        pcl::io::savePLYFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/greedy_mesh.ply", triangles);
+    }
+	
+    // 显示法线结果
+    // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer (new pcl::visualization::PCLVisualizer ("PCL Viewer"));
+    // viewer->setBackgroundColor (0, 0, 0);
+    // pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgb(cloud);
+    // viewer->addPointCloud<PointT> (cloud, rgb, "smooth cloud");
+    // viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "smooth cloud");
+    // viewer->addPointCloudNormals<PointT, pcl::Normal> (cloud, normals, 20, 0.05, "normals");
+
+    // viewer->initCameraParameters ();
 
     // 显示网格化结果
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D Viewer"));
     viewer->setBackgroundColor(0, 0, 0);  //
     viewer->addPolygonMesh(triangles, "mesh");  //
+
     while (!viewer->wasStopped())
     {
     	viewer->spinOnce(100);
