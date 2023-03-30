@@ -179,9 +179,9 @@ void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_
     uint8_t r(255), g(15), b(15);
     float radius = 1;
 
-    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 2)
+    for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 2.0)
     {
-        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 10.0)
+        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 2.0)
         {
             pcl::PointXYZRGB basic_point;
 
@@ -190,12 +190,12 @@ void creat_sphere_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_cloud_
             basic_point.z = radius * cosf(pcl::deg2rad(angle1));
 
             // Add noise
-            int add_noise = 1;
+            int add_noise = 0;
             if (add_noise)
             {
-                basic_point.x = basic_point.x + 0.01 * rand() / double(RAND_MAX);
-                basic_point.y = basic_point.y + 0.01 * rand() / double(RAND_MAX);
-                basic_point.z = basic_point.z + 0.01 * rand() / double(RAND_MAX);
+                basic_point.x = basic_point.x + 0.002 * rand() / double(RAND_MAX);
+                basic_point.y = basic_point.y + 0.002 * rand() / double(RAND_MAX);
+                basic_point.z = basic_point.z + 0.002 * rand() / double(RAND_MAX);
             }
 
             uint32_t rgb = (static_cast<uint32_t>(r) << 16 |
@@ -230,7 +230,7 @@ void creat_spheroid_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_clou
 
     for (float angle1 = 0.0; angle1 <= 180.0; angle1 += 0.5)
     {
-        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 1.0)
+        for (float angle2 = 0.0; angle2 <= 360.0; angle2 += 2.0)
         {
             pcl::PointXYZRGB basic_point;
 
@@ -239,7 +239,7 @@ void creat_spheroid_pointcloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr basic_clou
             basic_point.z = r_c * cosf(pcl::deg2rad(angle1));
 
             // Add noise
-            int add_noise = 1;
+            int add_noise = 0;
             if (add_noise)
             {
                 basic_point.x = basic_point.x + 0.01 * rand() / double(RAND_MAX);
@@ -287,8 +287,8 @@ int main(int argc, char** argv)
 
         // create_ellipse_pointcloud(cloud_xyzrgb);
         // create_cylinder_pointcloud(cloud_xyzrgb);
-        // creat_sphere_pointcloud(cloud_xyzrgb);
-        creat_spheroid_pointcloud(cloud_xyzrgb);
+        creat_sphere_pointcloud(cloud_xyzrgb);
+        // creat_spheroid_pointcloud(cloud_xyzrgb);
 
         pcl::copyPointCloud(*cloud_xyzrgb, *cloud);
         pcl::io::savePCDFile ("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_0_sphere.pcd", *cloud);

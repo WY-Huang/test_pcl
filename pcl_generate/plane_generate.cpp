@@ -9,9 +9,9 @@ void creat_plane_pointcloud(pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr)
 {
     // x: 14-82 y: -20-20 z:83.0
 
-    for (float x_p = 14.0; x_p <= 82.0; x_p += 0.1)
+    for (float x_p = 14.1; x_p <= 81.7; x_p += 0.1)
     {
-        for (float y_p = -20.0; y_p <= 20.0; y_p += 0.1)
+        for (float y_p = -20.0; y_p <= 19.6; y_p += 0.1)
         {
             pcl::PointXYZ basic_point;
 

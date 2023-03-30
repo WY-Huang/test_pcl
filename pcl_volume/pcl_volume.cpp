@@ -69,6 +69,9 @@ void volume_cal(double &vol_std, double &area_std)
     double vol_err = fabs(vol_std - vol) / vol_std;
     double area_err = fabs(area_std - area) / area;
 
+	double density = 65341.0 / area_std;
+
+	cout << "点云密度为：" << density << endl;
 	cout << "计算体积为：" << vol << "\t误差为：" << (vol_std - vol) << "\t百分比为：" << vol_err << endl;
 	cout << "计算表面积为：" << area << "\t误差为：" << (area_std - area) << "\t百分比为：" << area_err << endl;
 
