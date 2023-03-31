@@ -211,70 +211,115 @@ void cloud_filter_contour(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::Poi
 }
 
 
+// 点云在Z平面上镜像
+void cloud_mirror(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out,
+                    string save_path="")
+{
+    pcl::PointXYZ new_point;
+    for (int i = 0; i < cloud_in->points.size(); ++i)
+    {
+        new_point.x = cloud_in -> points[i].x;
+        new_point.y = cloud_in -> points[i].y;
+        new_point.z = -61.48 * 2 - (cloud_in -> points[i].z);
+
+        cloud_out->points.push_back(new_point);
+    }
+
+    *cloud_out = (*cloud_in) + (*cloud_out);
+
+    cloud_out->width = (int)cloud_out->points.size();
+    cloud_out->height = 1;
+
+    if (save_path.empty() == false)
+    {
+        pcl::PLYWriter writer;
+        
+        writer.write(save_path, *cloud_out, false, false);
+        cout << "Save cloud_mirror file success -> " << save_path << endl;
+    }
+    cout << "The number of cloud_mirror point clouds: " << cloud_out->points.size() << endl;
+}
+
+
 int main()
 {
+    // // 读取原始点云
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    // string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_1.ply";
+    // read_cloud(cloud, file_name);
+
+    // // 点云直通滤波
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg(new pcl::PointCloud<pcl::PointXYZ>);
+    // string save_seg = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_seg.ply";
+    // segment_cloud(cloud, cloud_seg, save_seg, "xyz_seg");
+
+    // // 点云下采样
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filter(new pcl::PointCloud<pcl::PointXYZ>);
+    // string save_filter = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_filter.ply";
+    // fast_uniform_sample(cloud_seg, cloud_filter, save_filter);
+
     // 读取原始点云
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_1.ply";
-    read_cloud(cloud, file_name);
-
-    // 点云直通滤波
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg(new pcl::PointCloud<pcl::PointXYZ>);
-    string save_seg = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_seg.ply";
-    segment_cloud(cloud, cloud_seg, save_seg, "xyz_seg");
-
-    // 点云下采样
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filter(new pcl::PointCloud<pcl::PointXYZ>);
-    string save_filter = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_filter.ply";
-    fast_uniform_sample(cloud_seg, cloud_filter, save_filter);
+    string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_filter.ply";
+    read_cloud(cloud_filter, file_name);
 
-    // pcl::PointXYZ min;	                        // xyz的最小值
-	// pcl::PointXYZ max;	                        // xyz的最大值
-	// pcl::getMinMax3D(*cloud_filter, min, max);	// 获取所有点中的坐标最值
-    // std::cout << "min: " << min << "\nmax: " << max << endl;
+    bool complete = false;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>);
 
-    // 按z轴坐标分割出部分点云
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg_z(new pcl::PointCloud<pcl::PointXYZ>);
-    string save_seg_z = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_z_seg.ply";
-    segment_cloud(cloud_filter, cloud_seg_z, save_seg_z, "z_seg");
+    if (complete)
+    {
+        // pcl::PointXYZ min;	                        // xyz的最小值
+        // pcl::PointXYZ max;	                        // xyz的最大值
+        // pcl::getMinMax3D(*cloud_filter, min, max);	// 获取所有点中的坐标最值
+        // std::cout << "min: " << min << "\nmax: " << max << endl;
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_z(new pcl::PointCloud<pcl::PointXYZ>);
-    string save_plane_z = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_z_plane.ply";
-    cloud_to_plane(cloud_seg_z, cloud_plane_z, save_plane_z);
+        // 按z轴坐标分割出部分点云
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg_z(new pcl::PointCloud<pcl::PointXYZ>);
+        string save_seg_z = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_z_seg.ply";
+        segment_cloud(cloud_filter, cloud_seg_z, save_seg_z, "z_seg");
 
-    // 提取投影平面点云的凸多边形边界
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_vex_hull(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::ConvexHull<pcl::PointXYZ> hull;        //创建凸包对象
-    hull.setInputCloud(cloud_plane_z);          //设置输入点云
-    hull.setDimension(2);                       //设置输入数据的维度(2D)
-    hull.reconstruct(*cloud_vex_hull);          //计算2D凸包结果
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_z(new pcl::PointCloud<pcl::PointXYZ>);
+        string save_plane_z = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_z_plane.ply";
+        cloud_to_plane(cloud_seg_z, cloud_plane_z, save_plane_z);
 
-    std::cerr << "凸多边形的点数: " << cloud_vex_hull->points.size() << std::endl;
+        // 提取投影平面点云的凸多边形边界
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_vex_hull(new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::ConvexHull<pcl::PointXYZ> hull;        //创建凸包对象
+        hull.setInputCloud(cloud_plane_z);          //设置输入点云
+        hull.setDimension(2);                       //设置输入数据的维度(2D)
+        hull.reconstruct(*cloud_vex_hull);          //计算2D凸包结果
 
-    pcl::PLYWriter writer;
-    writer.write("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_z_contour.ply", *cloud_vex_hull, true);
+        std::cerr << "凸多边形的点数: " << cloud_vex_hull->points.size() << std::endl;
 
-    // 生成平面点云
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
-    creat_plane_pointcloud(cloud_plane);
-    
-    // pcl轮廓转为cv
-    std::vector<cv::Point2f> contour_hull;
-    point_pcl_to_cv(cloud_vex_hull, contour_hull);
+        pcl::PLYWriter writer;
+        writer.write("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_z_contour.ply", *cloud_vex_hull, true);
 
-    // 根据轮廓筛选平面点
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_filter(new pcl::PointCloud<pcl::PointXYZ>);
-    string save_plane_filter = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_z_plane_filter.ply";
-    cloud_filter_contour(cloud_plane, cloud_plane_filter, contour_hull, save_plane_filter);
-    
-    // 拼接到滤波后的点云上
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_concate(new pcl::PointCloud<pcl::PointXYZ>);
-    string save_concate = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_concate.ply";
-    cloud_concatenate(cloud_filter, cloud_plane_filter, cloud_concate, save_concate);
+        // 生成平面点云
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane(new pcl::PointCloud<pcl::PointXYZ>);
+        creat_plane_pointcloud(cloud_plane);
+        
+        // pcl轮廓转为cv
+        std::vector<cv::Point2f> contour_hull;
+        point_pcl_to_cv(cloud_vex_hull, contour_hull);
+
+        // 根据轮廓筛选平面点
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane_filter(new pcl::PointCloud<pcl::PointXYZ>);
+        string save_plane_filter = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_z_plane_filter.ply";
+        cloud_filter_contour(cloud_plane, cloud_plane_filter, contour_hull, save_plane_filter);
+        
+        // 拼接到滤波后的点云上
+        string save_concate = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_concate.ply";
+        cloud_concatenate(cloud_filter, cloud_plane_filter, cloud_final, save_concate);
+    }
+    else
+    {
+        string save_cloud_mirr = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_mirr.ply";
+        cloud_mirror(cloud_filter, cloud_final, save_cloud_mirr);
+    }
 
     // 4）法线估计
     pcl::NormalEstimation<PointT,pcl::Normal> normalEstimation;                 // 创建法线估计的对象
-    normalEstimation.setInputCloud(cloud_concate);                             // 输入点云
+    normalEstimation.setInputCloud(cloud_final);                             // 输入点云
     pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);     // 创建用于最近邻搜索的KD-Tree
     normalEstimation.setSearchMethod(tree);
     pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);// 定义输出的点云法线
@@ -288,7 +333,7 @@ int main()
 	
 	// 将点云位姿、颜色、法线信息连接到一起
     pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
-    pcl::concatenateFields(*cloud_concate, *normals, *cloud_with_normals);
+    pcl::concatenateFields(*cloud_final, *normals, *cloud_with_normals);
     // pcl::io::savePCDFileASCII("/home/wanyel/vs_code/test_pcl/imgs/cloud/cloud_4_with_normals.pcd",*cloud_with_normals);
 	
     // 5)定义搜索树对象，进行3D重建，<<泊松重建有水密性要求>>
@@ -297,7 +342,7 @@ int main()
     
     pcl::PolygonMesh triangles ;            //创建多边形网格，用于存储结果
 
-    int poisson = 1;
+    int poisson = 0;
     if (poisson)
     {
         //创建Poisson对象，并设置参数
@@ -329,7 +374,7 @@ int main()
         pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;   // 定义三角化对象
 
         // 设置三角化参数
-        gp3.setSearchRadius(0.1);                     //设置搜索时的半径，也就是KNN的球半径
+        gp3.setSearchRadius(0.01);                     //设置搜索时的半径，也就是KNN的球半径
         gp3.setMu (2.5);                              //设置样本点搜索其近邻点的最远距离为2.5倍（典型值2.5-3），这样使得算法自适应点云密度的变化
         gp3.setMaximumNearestNeighbors (100);         //设置样本点最多可搜索的邻域个数，典型值是50-100
 
