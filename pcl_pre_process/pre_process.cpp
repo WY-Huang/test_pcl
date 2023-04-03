@@ -77,7 +77,7 @@ void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud
 void fast_uniform_sample(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out,
                         string save_path="")
 {
-	int every_k_points = 15;
+	int every_k_points = 100;
 	pcl::Indices indices;
 	for (size_t i = 0; i < cloud_in->size(); i += every_k_points)
 	{
@@ -243,27 +243,27 @@ void cloud_mirror(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<
 
 int main()
 {
-    // // 读取原始点云
-    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    // string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_1.ply";
-    // read_cloud(cloud, file_name);
+    // 读取原始点云
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086.ply";
+    read_cloud(cloud, file_name);
 
     // // 点云直通滤波
     // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg(new pcl::PointCloud<pcl::PointXYZ>);
     // string save_seg = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_seg.ply";
     // segment_cloud(cloud, cloud_seg, save_seg, "xyz_seg");
 
-    // // 点云下采样
-    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filter(new pcl::PointCloud<pcl::PointXYZ>);
-    // string save_filter = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_filter.ply";
-    // fast_uniform_sample(cloud_seg, cloud_filter, save_filter);
-
-    // 读取原始点云
+    // 点云下采样
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filter(new pcl::PointCloud<pcl::PointXYZ>);
-    string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_filter.ply";
-    read_cloud(cloud_filter, file_name);
+    string save_filter = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100.ply";
+    fast_uniform_sample(cloud, cloud_filter, save_filter);
 
-    bool complete = false;
+    // // 读取原始点云
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filter(new pcl::PointCloud<pcl::PointXYZ>);
+    // string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_filter.ply";
+    // read_cloud(cloud_filter, file_name);
+
+    bool complete = true;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_final(new pcl::PointCloud<pcl::PointXYZ>);
 
     if (complete)
@@ -342,7 +342,7 @@ int main()
     
     pcl::PolygonMesh triangles ;            //创建多边形网格，用于存储结果
 
-    int poisson = 0;
+    int poisson = 1;
     if (poisson)
     {
         //创建Poisson对象，并设置参数
