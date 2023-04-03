@@ -53,7 +53,7 @@ void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud
         }
         else if (seg_method == "z_seg")
         {
-            if (z0 > -61.5 && z0 < -61.44)   //  分割阈值
+            if (z0 > -62.5)   //  分割阈值,  && z0 < -61.44
             {
                 pointIdxVec.push_back(i);
             }
@@ -245,13 +245,13 @@ int main()
 {
     // 读取原始点云
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086.ply";
+    string file_name = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100.ply";
     read_cloud(cloud, file_name);
 
-    // // 点云直通滤波
-    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg(new pcl::PointCloud<pcl::PointXYZ>);
-    // string save_seg = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_seg.ply";
-    // segment_cloud(cloud, cloud_seg, save_seg, "xyz_seg");
+    // 点云直通滤波
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg(new pcl::PointCloud<pcl::PointXYZ>);
+    string save_seg = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.ply";
+    segment_cloud(cloud, cloud_seg, save_seg, "z_seg");
 
     // 点云下采样
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filter(new pcl::PointCloud<pcl::PointXYZ>);

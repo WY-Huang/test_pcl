@@ -11,6 +11,7 @@
 #include <chrono>
 #include <thread>
 #include <pcl/io/ply_io.h>
+#include <pcl/common/common_headers.h>
 
 using namespace std;
 
@@ -18,14 +19,17 @@ int main(int argc, char** argv)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-    // pcl::PCDReader reader;
-    // // 读入点云PCD文件
-    // reader.read("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100.ply", *cloud);
+    pcl::PCDReader reader;
+    // 读入点云PCD文件
+    reader.read("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.pcd", *cloud);
 
-    string filename = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100.ply";
-    pcl::io::loadPLYFile<pcl::PointXYZ>(filename, *cloud);
+    // string filename = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.ply";
+    // pcl::io::loadPLYFile<pcl::PointXYZ>(filename, *cloud);
 
+    // pcl::PCDWriter writer;
+    // writer.write<pcl::PointXYZ>("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.pcd", *cloud, false);
     cout<< "Point cloud data: " << cloud->points.size() << " points" << endl;
+
     // 创建分割时所需要的模型系数对象coefficients及存储内点的点索引集合对象inliers
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
@@ -36,8 +40,16 @@ int main(int argc, char** argv)
     // 必须配置，设置分割的模型类型、所用随机参数估计方法
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold(0.1);// 距离阈值 单位m。距离阈值决定了点被认为是局内点时必须满足的条件
-    //距离阈值表示点到估计模型的距离最大值
+    seg.setMaxIterations (10000);
+    seg.setDistanceThreshold(0.01);// 距离阈值 单位m。距离阈值决定了点被认为是局内点时必须满足的条件,距离阈值表示点到估计模型的距离最大值
+
+    // float angle = 10;                     
+    // float EpsAngle= pcl::deg2rad(angle);   // 角度转弧度
+    // Eigen::Vector3f Axis(0.0, 0.0, 1.0); 
+
+    // seg.setAxis(Axis);                     // 指定的轴
+    // seg.setEpsAngle(EpsAngle);             // 夹角阈值(弧度制)
+
     seg.setInputCloud(cloud);//输入点云
     seg.segment(*inliers, *coefficients);//实现分割，并存储分割结果到点集合inliers及存储平面模型系数coefficients
     if (inliers->indices.size() == 0)
@@ -64,7 +76,7 @@ int main(int argc, char** argv)
     cout<< *cloud_filtered << std::endl;
 
     pcl::PCDWriter writer;
-    writer.write<pcl::PointXYZ>("/home/wanyel/contours/20220926/2022_09_26_08_41_08_601_ground.pcd", *cloud_filtered, false);
+    writer.write<pcl::PointXYZ>("/home/wanyel/contours/20220926/pointCloud_20220913092246086_mod_sample_100_ground.pcd", *cloud_filtered, false);
 
     // 提取除地面外的物体
     extract.setNegative(true);
@@ -73,7 +85,7 @@ int main(int argc, char** argv)
     cout << "Object cloud after filtering: " << endl;
     cout << *cloud_filtered << endl;
 
-    writer.write<pcl::PointXYZ>("/home/wanyel/contours/20220926/2022_09_26_08_41_08_601_object.pcd", *cloud_filtered, false);
+    writer.write<pcl::PointXYZ>("/home/wanyel/contours/20220926/pointCloud_20220913092246086_mod_sample_100_object.pcd", *cloud_filtered, false);
 
     // 点云可视化
     boost::shared_ptr<pcl::visualization::PCLVisualizer>viewer(new pcl::visualization::PCLVisualizer("显示点云"));
