@@ -53,7 +53,7 @@ void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud
         }
         else if (seg_method == "z_seg")
         {
-            if (z0 > -62.5)   //  分割阈值,  && z0 < -61.44
+            if (z0 > -62.5 && z0 < 0)   //  分割阈值,  && z0 < -61.44
             {
                 pointIdxVec.push_back(i);
             }
@@ -374,19 +374,19 @@ int main()
         pcl::GreedyProjectionTriangulation<pcl::PointNormal> gp3;   // 定义三角化对象
 
         // 设置三角化参数
-        gp3.setSearchRadius(0.01);                     //设置搜索时的半径，也就是KNN的球半径
-        gp3.setMu (2.5);                              //设置样本点搜索其近邻点的最远距离为2.5倍（典型值2.5-3），这样使得算法自适应点云密度的变化
-        gp3.setMaximumNearestNeighbors (100);         //设置样本点最多可搜索的邻域个数，典型值是50-100
+        gp3.setSearchRadius(0.01);                    // 设置搜索时的半径，也就是KNN的球半径
+        gp3.setMu (2.5);                              // 设置样本点搜索其近邻点的最远距离为2.5倍（典型值2.5-3），这样使得算法自适应点云密度的变化
+        gp3.setMaximumNearestNeighbors (100);         // 设置样本点最多可搜索的邻域个数，典型值是50-100
 
         // gp3.setMinimumAngle(M_PI/18);              // 设置三角化后得到的三角形内角的最小的角度为10°
         // gp3.setMaximumAngle(2*M_PI/3);             // 设置三角化后得到的三角形内角的最大角度为120°
 
         gp3.setMaximumSurfaceAngle(M_PI/2);           // 设置某点法线方向偏离样本点法线的最大角度45°，如果超过，连接时不考虑该点
-        gp3.setNormalConsistency(false);              //设置该参数为true保证法线朝向一致，设置为false的话不会进行法线一致性检查
+        gp3.setNormalConsistency(false);              // 设置该参数为true保证法线朝向一致，设置为false的话不会进行法线一致性检查
 
-        gp3.setInputCloud (cloud_with_normals);       //设置输入点云为有向点云
-        gp3.setSearchMethod (tree2);                  //设置搜索方式
-        gp3.reconstruct (triangles);                  //重建提取三角化
+        gp3.setInputCloud (cloud_with_normals);       // 设置输入点云为有向点云
+        gp3.setSearchMethod (tree2);                  // 设置搜索方式
+        gp3.reconstruct (triangles);                  // 重建提取三角化
 
         //保存网格图
         pcl::io::savePLYFile("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_greedyTri_mesh.ply", triangles);

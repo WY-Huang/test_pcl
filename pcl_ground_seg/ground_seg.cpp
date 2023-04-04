@@ -12,6 +12,7 @@
 #include <thread>
 #include <pcl/io/ply_io.h>
 #include <pcl/common/common_headers.h>
+#include <pcl/filters/plane_clipper3D.h>
 
 using namespace std;
 
@@ -19,12 +20,12 @@ int main(int argc, char** argv)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PCDReader reader;
-    // 读入点云PCD文件
-    reader.read("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.pcd", *cloud);
+    // pcl::PCDReader reader;
+    // // 读入点云PCD文件
+    // reader.read("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.pcd", *cloud);
 
-    // string filename = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.ply";
-    // pcl::io::loadPLYFile<pcl::PointXYZ>(filename, *cloud);
+    string filename = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.ply";
+    pcl::io::loadPLYFile<pcl::PointXYZ>(filename, *cloud);
 
     // pcl::PCDWriter writer;
     // writer.write<pcl::PointXYZ>("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_sample_100_filter.pcd", *cloud, false);
@@ -40,8 +41,8 @@ int main(int argc, char** argv)
     // 必须配置，设置分割的模型类型、所用随机参数估计方法
     seg.setModelType(pcl::SACMODEL_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setMaxIterations (10000);
-    seg.setDistanceThreshold(0.01);// 距离阈值 单位m。距离阈值决定了点被认为是局内点时必须满足的条件,距离阈值表示点到估计模型的距离最大值
+    // seg.setMaxIterations (10000);
+    seg.setDistanceThreshold(0.05);// 距离阈值 单位m。距离阈值决定了点被认为是局内点时必须满足的条件,距离阈值表示点到估计模型的距离最大值
 
     // float angle = 10;                     
     // float EpsAngle= pcl::deg2rad(angle);   // 角度转弧度
@@ -86,6 +87,31 @@ int main(int argc, char** argv)
     cout << *cloud_filtered << endl;
 
     writer.write<pcl::PointXYZ>("/home/wanyel/contours/20220926/pointCloud_20220913092246086_mod_sample_100_object.pcd", *cloud_filtered, false);
+
+    // 分割地面后的点云
+    pcl::PointCloud<pcl::PointXYZ>::Ptr filter_ground(new pcl::PointCloud<pcl::PointXYZ>);
+
+    Eigen::Vector4f plane; // 定义平面参数
+    for (int i=0; i < plane.size(); i++)
+    {
+        plane[i] = coefficients -> values[i];
+    }
+    cout << plane << endl;
+    plane[3] = 61.8;
+
+    pcl::IndicesPtr indices(new vector <int>()); // 保存裁剪点的索引
+    pcl::PlaneClipper3D<pcl::PointXYZ> clipper(plane);
+    clipper.setPlaneParameters(plane);
+    clipper.clipPointCloud3D(*cloud, *indices);
+    pcl::ExtractIndices<pcl::PointXYZ> extract_object;
+    extract_object.setInputCloud(cloud);
+    extract_object.setIndices(indices);
+    extract_object.setNegative(false);
+    extract_object.filter(*filter_ground);
+
+    cout << "The filtered points data:  " << filter_ground->points.size() << endl;
+    writer.write<pcl::PointXYZ>("/home/wanyel/contours/20220926/pointCloud_20220913092246086_mod_sample_100_object_filter.pcd", *filter_ground, false);
+
 
     // 点云可视化
     boost::shared_ptr<pcl::visualization::PCLVisualizer>viewer(new pcl::visualization::PCLVisualizer("显示点云"));

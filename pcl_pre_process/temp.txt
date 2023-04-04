@@ -306,3 +306,68 @@ main(int argc, char** argv)
     return (0);
 }
 
+
+#include <iostream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/plane_clipper3D.h>
+#include <pcl/filters/extract_indices.h>
+#include <boost/thread/thread.hpp>
+#include <pcl/visualization/pcl_visualizer.h>
+
+typedef pcl::PointXYZ PointT;
+using namespace std;
+void viewer(pcl::PointCloud<PointT>::Ptr& before, pcl::PointCloud<PointT>::Ptr& after)
+{
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> view(new pcl::visualization::PCLVisualizer("ShowCloud"));
+
+    int v1(0);
+    view->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+    view->setBackgroundColor(0, 0, 0, v1);
+    view->addText("Raw point clouds", 10, 10, "v1_text", v1);
+    int v2(0);
+    view->createViewPort(0.5, 0.0, 1, 1.0, v2);
+    view->setBackgroundColor(0.1, 0.1, 0.1, v2);
+    view->addText("filtered point clouds", 10, 10, "v2_text", v2);
+
+    view->addPointCloud<pcl::PointXYZ>(before, "sample cloud", v1);
+    view->addPointCloud<pcl::PointXYZ>(after, "cloud_filtered", v2);
+    view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "sample cloud", v1);
+    view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud_filtered", v2);
+    view->addCoordinateSystem(0.1);
+    //view->initCameraParameters();
+    while (!view->wasStopped())
+    {
+        view->spinOnce(100);
+        boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    }
+
+
+}
+int main()
+{
+    pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
+    pcl::PCDReader reader;
+    reader.read("data//bunny.pcd", *cloud);
+    cout << "The points data:  " << cloud->points.size() << endl;
+    pcl::PointCloud<PointT>::Ptr filter(new pcl::PointCloud<PointT>);
+
+    Eigen::Vector4f plane; // 定义平面参数
+    plane << 0, 0, 1, 0;
+
+    pcl::IndicesPtr indices(new vector <int>()); // 保存裁剪点的索引
+    pcl::PlaneClipper3D<PointT> clipper(plane);
+    clipper.setPlaneParameters(plane);
+    clipper.clipPointCloud3D(*cloud, *indices);
+    pcl::ExtractIndices<PointT> extract;
+    extract.setInputCloud(cloud);
+    extract.setIndices(indices);
+    extract.setNegative(true);
+    extract.filter(*filter);
+
+    cout << "The filtered points data:  " << filter->points.size() << endl;
+    viewer(cloud, filter);
+
+    return 0;
+}
+
