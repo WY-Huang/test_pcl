@@ -319,7 +319,7 @@ int main()
 
     // 4）法线估计
     pcl::NormalEstimation<PointT,pcl::Normal> normalEstimation;                 // 创建法线估计的对象
-    normalEstimation.setInputCloud(cloud_final);                             // 输入点云
+    normalEstimation.setInputCloud(cloud_final);                                // 输入点云
     pcl::search::KdTree<PointT>::Ptr tree(new pcl::search::KdTree<PointT>);     // 创建用于最近邻搜索的KD-Tree
     normalEstimation.setSearchMethod(tree);
     pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);// 定义输出的点云法线
