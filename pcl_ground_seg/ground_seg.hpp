@@ -29,10 +29,10 @@ public:
     pcl::ModelCoefficients::Ptr coefficients;   // 创建分割时所需要的模型系数对象coefficients
     pcl::PointIndices::Ptr inliers;             // 存储内点的点索引集合对象inliers
 
-    pcl::PCDWriter writer;
+    pcl::PCDWriter writer;                      // 保存pcd点云
 
-    int read_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, string filename);
+    int read_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, string filename);     // 读取点云
     void ground_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, pcl::ModelCoefficients::Ptr coefficients,
-                    pcl::PointIndices::Ptr inliers, float thick);
-    int cloud_viewer(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_a, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_b);
+                    pcl::PointIndices::Ptr inliers, float thick);                   // 拟合地面点云
+    int cloud_viewer(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_a, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_b); // 可视化
 };

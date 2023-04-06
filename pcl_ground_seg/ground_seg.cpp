@@ -97,7 +97,7 @@ void Ground_segment::ground_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr ground, pcl:
     seg.setModelType(pcl::SACMODEL_PLANE);      // 必须配置，设置分割的模型类型、所用随机参数估计方法
     seg.setMethodType(pcl::SAC_RANSAC);
     // seg.setMaxIterations (10000);
-    seg.setDistanceThreshold(thick);             // 距离阈值表示点到估计模型的距离最大值，单位m
+    seg.setDistanceThreshold(thick);            // 距离阈值表示点到估计模型的距离最大值，单位m
 
     // float angle = 10;                     
     // float EpsAngle= pcl::deg2rad(angle);     // 角度转弧度
