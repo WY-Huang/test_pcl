@@ -2,7 +2,7 @@ import open3d as o3d
 import numpy as np
 
 print("->正在加载点云... ")
-pcd = o3d.io.read_point_cloud("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_1.ply")
+pcd = o3d.io.read_point_cloud("/home/wanyel/contours/20220926/pointCloud_20220913092246086_mod_sample_100_object_filter.pcd")
 print(pcd)
 
 print("->正在计算点云凸包...")

@@ -1,23 +1,4 @@
-#include <iostream>
-#include <math.h>
-#include <vtkPLYReader.h>
-#include <vtkTriangleFilter.h>
-#include <vtkMassProperties.h>
-#include <vtkSmartPointer.h>
-#include <vtkSphereSource.h>
-//可视化相关头文件
-#include <vtkRenderer.h>
-#include <vtkRenderWindow.h>
-#include <vtkPolyDataMapper.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkProperty.h>
-#include <vtkAutoInit.h> 
-#include <vtkActor.h>
-VTK_MODULE_INIT(vtkRenderingOpenGL2);
-VTK_MODULE_INIT(vtkInteractionStyle);
-
-using namespace std;
+#include "pcl_volume.hpp"
 
 // 球面体积及面积计算demo
 void volume_demo()
@@ -105,28 +86,44 @@ void volume_cal(double &vol_std, double &area_std)
     // return (0);
 }
 
-int main(int argc, char** argv)
+// 凸包算法计算体积
+void convex_volume_cal()
 {
-    // 球体体积及表面积
-    double r = 1.0;
-    double vol_std = 4 * M_PI * r * r * r / 3;
-    double area_std = 4 * M_PI * r * r;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::io::loadPLYFile<pcl::PointXYZ>("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_mirr.ply", *cloud);
 
-    // 椭球体体积
-    double vol_std_spheroid = 4 * M_PI * 5 * 4 * 3 / 3;
+	pcl::ConvexHull<pcl::PointXYZ> hull;                  
+	hull.setInputCloud(cloud);                   
+	hull.setDimension(3);		// 设置凸包维度
+	hull.setComputeAreaVolume(true);
 
-    // 梯形台尺寸：66.61*38.85 20.33*20.28 19.50    V=[S1+S2+√(S1*S2)]*h/3 
-    double vol_std_prism = (66.61*38.85 + 20.33*20.28 + sqrt(66.61*38.85 + 20.33*20.28)) * 19.50 / 3;
-    cout << "梯形台理论体积：" << vol_std_prism << endl;
+	std::vector<pcl::Vertices> polygons;		// polygons保存的是所有凸包多边形的顶点在surface_hull中的下标
+	pcl::PointCloud<pcl::PointXYZ>::Ptr surface_hull(new pcl::PointCloud<pcl::PointXYZ>);	// surface_hull是所有凸包多边形的顶点
+	hull.reconstruct(*surface_hull, polygons);  // 凸包点云存放在surface_hull中,polygons中的Vertices存放一组点的索引，索引是surface_hull中的点对应的索引
 
-    cout << "半径为1的球体标准体积：" << vol_std << endl;
-    cout << "半径为1的球体标准表面积：" << area_std << endl;
-    cout << "半轴长为3，4，5的椭球体标准体积：" << vol_std_spheroid << endl;
-    cout << "===============================" << endl;
-    // volume_demo();
-    // cout << "===============================" << endl;
-    volume_cal(vol_std, area_std);
+	double convex_volume = hull.getTotalVolume();
 
+	cout << surface_hull->size() << endl;
+	cout << "凸包体积： " << convex_volume << endl;
 
-}
+	// ---------------------- Visualizer -------------------------------------------
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer);
+	viewer->setBackgroundColor(0, 0, 0);
 
+	// pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> color_handler(cloud, 255, 255, 0);
+	// viewer->addPointCloud(cloud, color_handler, "sample cloud");
+	// viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 6, "sample cloud");
+
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> color_handlerK(surface_hull, 255, 0, 0);
+	viewer->addPointCloud(surface_hull, color_handlerK, "point");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "point");
+
+	// viewer->addPolygon<pcl::PointXYZ>(surface_hull, 0, 0, 255, "polyline");
+	viewer->addPolygonMesh<pcl::PointXYZ>(surface_hull, polygons, "polyline");
+	viewer->setRepresentationToWireframeForAllActors();
+
+	while (!viewer->wasStopped())
+	{
+		viewer->spinOnce(100);
+	}
+}      
