@@ -96,7 +96,7 @@ void fast_uniform_sample(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::Poin
 }
 
 
-//构造平面点云  
+// 构造平面点云  
 void creat_plane_pointcloud(pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr)
 {
     // min (-11.512,18.552,-61.498)  max (28.076,81.3,-41.848)
@@ -178,7 +178,7 @@ void point_pcl_to_cv(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, std::vector<c
 }
 
 
-// 点云筛选
+// 点云筛选,筛选投影在多边形内部的点
 void cloud_filter_contour(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out,
                     std::vector<cv::Point2f> contour, string save_path="")
 {
@@ -211,7 +211,7 @@ void cloud_filter_contour(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::Poi
 }
 
 
-// 点云在Z平面上镜像
+// 点云在Z平面上的镜像点云
 void cloud_mirror(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out,
                     string save_path="")
 {
