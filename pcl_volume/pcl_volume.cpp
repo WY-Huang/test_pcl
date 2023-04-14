@@ -97,7 +97,7 @@ void convex_volume_cal()
 	hull.setDimension(3);		// 设置凸包维度
 	hull.setComputeAreaVolume(true);
 
-	std::vector<pcl::Vertices> polygons;		// polygons保存的是所有凸包多边形的顶点在surface_hull中的下标
+	std::vector<pcl::Vertices> polygons;		// polygons保存的是所有凸包多边形的顶点在surface_hull中的索引
 	pcl::PointCloud<pcl::PointXYZ>::Ptr surface_hull(new pcl::PointCloud<pcl::PointXYZ>);	// surface_hull是所有凸包多边形的顶点
 	hull.reconstruct(*surface_hull, polygons);  // 凸包点云存放在surface_hull中,polygons中的Vertices存放一组点的索引，索引是surface_hull中的点对应的索引
 
@@ -106,21 +106,36 @@ void convex_volume_cal()
 	cout << surface_hull->size() << endl;
 	cout << "凸包体积： " << convex_volume << endl;
 
+	// pcl::PLYWriter writer;
+	string save_path = "/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_mirr_hull.ply";
+    // writer.write(save_path, *surface_hull, false, false);
+	pcl::PolygonMesh triangles ;            // 创建多边形网格，用于存储结果
+	hull.reconstruct(triangles);
+	pcl::io::savePLYFile(save_path, triangles);
+    cout << "Save segment file success -> " << save_path << endl;
+
 	// ---------------------- Visualizer -------------------------------------------
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer);
-	viewer->setBackgroundColor(0, 0, 0);
+	int v1(0), v2(0);
+    viewer->createViewPort(0, 0, 0.5, 1, v1);
+    viewer->createViewPort(0.5, 0, 1, 1, v2);
+    viewer->setBackgroundColor(0, 0, 0, v1);
+    viewer->setBackgroundColor(0.3, 0.3, 0.3, v2);
+	// viewer->setBackgroundColor(0, 0, 0, 1);
 
 	// pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> color_handler(cloud, 255, 255, 0);
 	// viewer->addPointCloud(cloud, color_handler, "sample cloud");
 	// viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 6, "sample cloud");
 
 	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> color_handlerK(surface_hull, 255, 0, 0);
-	viewer->addPointCloud(surface_hull, color_handlerK, "point");
-	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "point");
+	viewer->addPointCloud(surface_hull, color_handlerK, "point", v1);
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "point", v1);
 
-	// viewer->addPolygon<pcl::PointXYZ>(surface_hull, 0, 0, 255, "polyline");
-	viewer->addPolygonMesh<pcl::PointXYZ>(surface_hull, polygons, "polyline");
+	// // viewer->addPolygon<pcl::PointXYZ>(surface_hull, 0, 0, 255, "polyline");
+	viewer->addPolygonMesh<pcl::PointXYZ>(surface_hull, polygons, "polyline", v1);
 	viewer->setRepresentationToWireframeForAllActors();
+
+	viewer->addPolygonMesh(triangles, "mesh", v2);
 
 	while (!viewer->wasStopped())
 	{

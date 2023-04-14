@@ -25,5 +25,18 @@ int main(int argc, char** argv)
 
     convex_volume_cal();
 
+    vtkSmartPointer<vtkPLYReader> reader = vtkSmartPointer<vtkPLYReader>::New();
+    reader->SetFileName("/home/wanyel/contours/20220926/PointCloud_20220913092246086_mod_mirr_hull.ply");
+    reader->Update();
+	vtkSmartPointer<vtkTriangleFilter> tri = vtkSmartPointer<vtkTriangleFilter>::New();
+	tri->SetInputData(reader->GetOutput());
+	tri->Update();
+	vtkSmartPointer<vtkMassProperties> poly = vtkSmartPointer<vtkMassProperties>::New();
+	poly->SetInputData(tri->GetOutput());
+	poly->Update();
+
+	double vol = poly->GetVolume();             // 体积
+    cout << "VTK计算的体积为：" << vol << endl;
+
 
 }
