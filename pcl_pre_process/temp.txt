@@ -574,3 +574,60 @@ if(finish_line==true)
         ui->pclShow->GetRenderWindow()->Finalize();
         ui->pclShow->update();
     }
+
+    #include <iostream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/sample_consensus/ransac.h>
+#include <pcl/sample_consensus/sac_model_circle.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <boost/thread/thread.hpp>
+
+using namespace std;
+
+int main()
+{
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	if (pcl::io::loadPCDFile("Circle.pcd", *cloud) < 0)
+	{
+		PCL_ERROR("Couldn't read file \n");
+		return -1;
+	}
+
+	//----------------------RANSAC框架----------------------------   
+	pcl::SampleConsensusModelCircle2D<pcl::PointXYZ>::Ptr circle2D(new pcl::SampleConsensusModelCircle2D<pcl::PointXYZ>(cloud));
+	pcl::RandomSampleConsensus<pcl::PointXYZ> ransac(circle2D);	// 定义RANSAC算法对象
+	ransac.setDistanceThreshold(0.01);	// 设置距离阈值
+	ransac.setMaxIterations(1000);		// 设置最大迭代次数
+	ransac.computeModel();				// 拟合二维圆
+
+	vector<int> inliers;				// 用于存放内点索引的vector
+	ransac.getInliers(inliers);			// 获取内点索引
+
+	//------------根据内点索引提取拟合的二维圆点云----------------
+	pcl::PointCloud<pcl::PointXYZ>::Ptr circle_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::copyPointCloud<pcl::PointXYZ>(*cloud, inliers, *circle_cloud);
+
+	//--------------输出模型参数：圆心坐标和半径------------------
+	Eigen::VectorXf coeff;
+	ransac.getModelCoefficients(coeff);
+	cout << "圆心的x坐标为：" << coeff[0] << "\n"
+		<< "圆心的y坐标为：" << coeff[1] << "\n"
+		<< "圆的半径为：" << coeff[2] << endl;
+
+	//------------------------可视化结果-------------------------
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("cloud show"));
+
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> color(cloud, 0, 255, 0);
+	viewer->addPointCloud(cloud, color, "cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "cloud");	//点的大小
+	viewer->setWindowName("二维圆形点云");
+
+	while (!viewer->wasStopped())
+	{
+		viewer->spinOnce(100);
+		boost::this_thread::sleep(boost::posix_time::microseconds(10000));
+	}
+
+	return 0;
+}
