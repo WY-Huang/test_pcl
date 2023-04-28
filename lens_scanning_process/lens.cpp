@@ -116,7 +116,7 @@ void contour_line_circle_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::
     pcl::PCDWriter writer;     
     writer.write("/home/wanyel/contours/lens_scanning/2023_04_27_10_17_02_849_all_circle.pcd", *all_cloud_ptr, false);
 /*
-    // 1)圆拟合
+    // 1)圆拟合方法1
     pcl::SACSegmentation<pcl::PointXYZ> seg;    // 创建分割对象
     seg.setOptimizeCoefficients(true);          // 可选择配置，设置模型系数需要优化
     seg.setModelType(pcl::SACMODEL_CIRCLE2D);      // 必须配置，设置分割的模型类型、所用随机参数估计方法
@@ -130,7 +130,7 @@ void contour_line_circle_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::
     seg.segment(*inliers, *coeff);       // 实现分割，并存储分割结果到点集合inliers及存储平面模型系数coefficients
     cout << "coeff: " << coeff->values[0] << coeff->values[1] << coeff->values[2] << endl;
     /*
-    // 2)方法2
+    // 2)圆拟合方法2
     //----------------------RANSAC框架----------------------------   
 	pcl::SampleConsensusModelCircle2D<pcl::PointXYZ>::Ptr circle2D(new pcl::SampleConsensusModelCircle2D<pcl::PointXYZ>(basic_cloud_ptr));
 	pcl::RandomSampleConsensus<pcl::PointXYZ> ransac(circle2D);	// 定义RANSAC算法对象
@@ -150,7 +150,7 @@ void contour_line_circle_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::
 	ransac.getModelCoefficients(coeff);
     cout << "coeff: " << coeff << endl;
 
-    // 3)圆拟合方法
+    // 3)圆拟合方法3
     vector<float> coeff;
     circleLeastFit(basic_cloud_ptr, coeff);
     cout << "coeff:\n" << "y: " << coeff[0] << "\tz: " << coeff[1] << "\tr: " << coeff[2] <<endl;
