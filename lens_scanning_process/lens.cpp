@@ -71,7 +71,8 @@ void contour_line_coor_find(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector
 }
 
 // 对所有轮廓进行圆拟合
-void contour_line_circle_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_ptr)
+void contour_line_circle_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_ptr,
+                             vector<vector<float>> &coefficient)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -88,10 +89,11 @@ void contour_line_circle_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::
             {
                 vector<float> coeff;
                 circleLeastFit(basic_cloud_ptr, coeff);
-                cout << "coeff:\n" << "y: " << coeff[0] << "\tz: " << coeff[1] << "\tr: " << coeff[2] <<endl;
+                // cout << "coeff:\n" << "y: " << coeff[0] << "\tz: " << coeff[1] << "\tr: " << coeff[2] <<endl;
+                coefficient.push_back(coeff);
                 // 生成圆点云
                 pcl::PointCloud<pcl::PointXYZ>::Ptr circle_cloud_fit(new pcl::PointCloud<pcl::PointXYZ>);
-                generate_circle(temp_value_end, coeff[0], coeff[1],coeff[2], circle_cloud_fit);
+                generate_circle(temp_value_end, coeff[0], coeff[1], coeff[2], circle_cloud_fit);
 
                 *all_cloud_ptr += * circle_cloud_fit;
             }
@@ -188,21 +190,31 @@ int cloud_viewer(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_a, pcl::PointCloud<pc
 }
 
 // 二维可视化
-void viewer_plot()
+void viewer_plot(const vector<vector<float>> &coefficient)
 {
     // 创建PCL可视化对象
-    pcl::visualization::PCLVisualizer viewer("2D Curve");
+    pcl::visualization::PCLPlotter Plotter("2D Curve");
 
     // 创建一组曲线点
-    // std::vector<double> x_values = {0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
-    // std::vector<double> y_values = {0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 0.9};
+    std::vector<double> x_values;
+    std::vector<double> y_values;
+    for (int i=0; i<coefficient.size(); i++)
+    {
+        x_values.push_back(double(i));
+        y_values.push_back(double(2.0 * coefficient[i][2]));
+    }
+
+    std::vector<double> y_values_mean;
+    y_values_mean = mean_filter(y_values, 11);
 
     // 添加曲线到可视化对象
-    viewer.addPlotData(x_values, y_values, "curve", vtkChart::LINE, 1.0, 0.0, 0.0);
+    Plotter.addPlotData(x_values, y_values, "curve", vtkChart::LINE);
+    Plotter.addPlotData(x_values, y_values_mean, "curve", vtkChart::LINE);
 
     // 显示可视化对象
-    while (!viewer.wasStopped()) {
-        viewer.spinOnce();
+    while (!Plotter.wasStopped()) {
+        Plotter.spinOnce();
+        std::this_thread::sleep_for(std::chrono::microseconds(10000));
     }
 }
 
@@ -278,4 +290,25 @@ void circleLeastFit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, vector<float> &co
     coeff.push_back(b / (-2));
     coeff.push_back(sqrt(a * a + b * b - 4 * c) / 2);
 
+}
+
+// 一维均值滤波
+std::vector<double> mean_filter(const std::vector<double>& data, int window_size)
+{
+    std::vector<double> filtered_data(data.size());
+    for (int i = 0; i < data.size(); ++i)
+    {
+        double sum = 0.0;
+        int count = 0;
+        for (int j = i - window_size; j <= i + window_size; ++j)
+        {
+            if (j >= 0 && j < data.size())
+            {
+                sum += data[j];
+                ++count;
+            }
+        }
+        filtered_data[i] = sum / count;
+    }
+    return filtered_data;
 }

@@ -19,8 +19,10 @@ int main()
 
     // 对所有轮廓进行圆拟合
     pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
-    contour_line_circle_fit(cloud_seg, all_cloud_ptr);
+    vector<vector<float>> coefficients;
+    contour_line_circle_fit(cloud_seg, all_cloud_ptr, coefficients);
 
     // 可视化
-    cloud_viewer(cloud_seg, all_cloud_ptr);
+    // cloud_viewer(cloud_seg, all_cloud_ptr);
+    viewer_plot(coefficients);
 }
