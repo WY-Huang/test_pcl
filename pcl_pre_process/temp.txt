@@ -631,3 +631,212 @@ int main()
 
 	return 0;
 }
+
+#include <iostream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/features/normal_3d.h>				
+#include <pcl/segmentation/sac_segmentation.h>		
+#include <pcl/visualization/cloud_viewer.h>		
+
+using namespace std;
+
+int main()
+{
+	//--------------------------------加载点云-------------------------------
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	if (pcl::io::loadPCDFile("国家电杆.pcd", *cloud) < 0)
+	{
+		PCL_ERROR("点云读取失败！\n");
+		return -1;
+	}
+	cout << "点云点数为：" << cloud->points.size() << endl;
+	//-----------------------------法线估计--------------------------------
+	pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;	// 创建法向量估计对象
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
+	n.setSearchMethod(tree);						       // 设置搜索方式
+	n.setInputCloud(cloud);						           // 设置输入点云
+	n.setKSearch(20);								       // 设置K近邻搜索点的个数
+	pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+	n.compute(*normals);						          // 计算法向量，并将结果保存到normals中
+	//----------------------------圆柱拟合--------------------------------
+	pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> seg;// 创建圆柱体分割对象
+	seg.setInputCloud(cloud);										// 设置输入点云
+	seg.setInputNormals(normals);								    // 设置输入法向量
+	seg.setOptimizeCoefficients(true);								// 设置对估计的模型系数需要进行优化
+	seg.setModelType(pcl::SACMODEL_CYLINDER);						// 设置分割模型为圆柱体模型
+	seg.setMethodType(pcl::SAC_RANSAC);								// 设置采用RANSAC算法进行参数估计
+	seg.setNormalDistanceWeight(0.3);								// 设置表面法线权重系数
+	seg.setMaxIterations(10000);									// 设置迭代的最大次数
+	seg.setDistanceThreshold(0.1);									// 设置内点到模型距离的最大值
+	seg.setRadiusLimits(2.0, 3.0);									// 设置圆柱模型半径的范围
+	
+	pcl::PointIndices::Ptr inliers_cylinder(new pcl::PointIndices);	// 保存分割结果
+	pcl::ModelCoefficients::Ptr coefficients_cylinder(new pcl::ModelCoefficients);	// 保存圆柱体模型系数
+	seg.segment(*inliers_cylinder, *coefficients_cylinder);			// 执行分割，将分割结果的索引保存到inliers_cylinder中，同时存储模型系数coefficients_cylinder
+	
+	cout << "轴线一点坐标：(" << coefficients_cylinder->values[0] << ", "
+		<< coefficients_cylinder->values[1] << ", "
+		<< coefficients_cylinder->values[2] << ")"
+		<< endl;
+	cout << "轴线方向向量：(" << coefficients_cylinder->values[3] << ", "
+		<< coefficients_cylinder->values[4] << ", "
+		<< coefficients_cylinder->values[5] << ")"
+		<< endl;
+	cout << "圆柱体半径：" << coefficients_cylinder->values[6] << endl;
+	
+	//---------------------------------结果可视化-------------------------
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D viewer"));
+
+	viewer->setBackgroundColor(0.7, 0.7, 0.7);
+	viewer->addText("FIT CYLINDER", 10, 10, "v1 text");
+	viewer->setWindowName("获取圆柱系数");
+	viewer->addPointCloud<pcl::PointXYZ>(cloud, "cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud");
+	viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "cloud");
+	viewer->addCylinder(*coefficients_cylinder, "cycler", 0); // 可视化拟合出来的圆柱模型
+
+	while (!viewer->wasStopped())
+	{
+		viewer->spinOnce(100);
+	
+	}
+
+	return 0;
+}
+
+#include <iostream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <boost/thread/thread.hpp>
+using namespace std;
+
+void VisualizeCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, pcl::PointCloud<pcl::PointXYZ>::Ptr& filter_cloud) {
+    //-----------------------显示点云-----------------------
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("显示点云"));
+
+    int v1(0), v2(0);
+    viewer->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+    viewer->setBackgroundColor(0, 0, 0, v1);
+    viewer->addText("point clouds", 10, 10, "v1_text", v1);
+    viewer->createViewPort(0.5, 0.0, 1, 1.0, v2);
+    viewer->setBackgroundColor(0.1, 0.1, 0.1, v2);
+    viewer->addText("filtered point clouds", 10, 10, "v2_text", v2);
+    // 按照z字段进行渲染,将z改为x或y即为按照x或y字段渲染
+    pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZ> fildColor(cloud, "z");
+    viewer->addPointCloud<pcl::PointXYZ>(cloud, fildColor, "sample cloud", v1);
+
+    viewer->addPointCloud<pcl::PointXYZ>(filter_cloud, "cloud_filtered", v2);
+    viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud_filtered", v2);
+    //viewer->addCoordinateSystem(1.0);
+    //viewer->initCameraParameters();
+    while (!viewer->wasStopped())
+    {
+        viewer->spinOnce(100);
+        boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+    }
+}
+
+int
+main ()
+{
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ>);
+  //读入点云数据
+  pcl::PCDReader reader;
+  reader.read<pcl::PointXYZ> ("Test.pcd", *cloud);
+  cout << "Cloud before filtering:\n " << *cloud << endl;
+  // -----------------统计滤波-------------------
+  // 创建滤波器，对每个点分析的临近点的个数设置为50 ，并将标准差的倍数设置为1  这意味着如果一
+  // 个点的距离超出了平均距离一个标准差以上，则该点被标记为离群点，并将它移除，存储起来
+  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+  sor.setInputCloud (cloud);   //设置待滤波的点云
+  sor.setMeanK (50);           //设置在进行统计时考虑查询点邻近点数
+  sor.setStddevMulThresh (1);  //设置判断是否为离群点的阈值，里边的数字表示标准差的倍数，1个标准差以上就是离群点。
+  //即：当判断点的k近邻平均距离(mean distance)大于全局的1倍标准差+平均距离(global distances mean and standard)，则为离群点。
+
+  
+  sor.filter (*cloud_filtered); //存储内点
+  cout << "Cloud after filtering: \n" <<  *cloud_filtered << endl;
+  // 保存点云
+  pcl::PCDWriter writer;
+ // writer.write<pcl::PointXYZ> ("inliers.pcd", *cloud_filtered, true);
+  // 可视化
+  VisualizeCloud(cloud, cloud_filtered);
+  
+  return (0);
+}
+
+
+#include <iostream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/search/kdtree.h>
+#include <boost/thread/thread.hpp>
+#include <pcl/filters/convolution_3d.h>
+#include <pcl/visualization/pcl_visualizer.h>
+
+using namespace std;
+int main()
+{
+
+	//------------------加载数据------------------------
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+
+	if (pcl::io::loadPCDFile("ro.pcd", *cloud) == -1)
+	{
+		PCL_ERROR("Couldn't read file pcd\n");
+		return(-1);
+	}
+
+	//-----------基于高斯核函数的卷积滤波实现------------------------
+	pcl::filters::GaussianKernel<pcl::PointXYZ, pcl::PointXYZ> kernel;
+	kernel.setSigma(4);//高斯函数的标准方差，决定函数的宽度
+	kernel.setThresholdRelativeToSigma(4);//设置相对Sigma参数的距离阈值
+	kernel.setThreshold(0.05);//设置距离阈值，若点间距离大于阈值则不予考虑
+	cout << "Kernel made" << endl;
+
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+	tree->setInputCloud(cloud);
+	cout << "KdTree made" << endl;
+
+	//---------设置Convolution 相关参数---------------------------
+	pcl::filters::Convolution3D<pcl::PointXYZ, pcl::PointXYZ, pcl::filters::GaussianKernel<pcl::PointXYZ, pcl::PointXYZ>> convolution;
+	convolution.setKernel(kernel);//设置卷积核
+	convolution.setInputCloud(cloud);
+	convolution.setNumberOfThreads(8);
+	convolution.setSearchMethod(tree);
+	convolution.setRadiusSearch(0.01);
+	cout << "Convolution Start" << endl;
+
+	convolution.convolve(*cloud_filtered);
+    pcl::io::savePCDFileASCII("GS.pcd", *cloud_filtered);
+	//--------------------显示点云--------------------------
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> view(new pcl::visualization::PCLVisualizer("ShowCloud"));
+
+	int v1(0);
+	view->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+	view->setBackgroundColor(0, 0, 0, v1);
+	view->addText("Raw point clouds", 10, 10, "v1_text", v1);
+	int v2(0);
+	view->createViewPort(0.5, 0.0, 1, 1.0, v2);
+	view->setBackgroundColor(0.1, 0.1, 0.1, v2);
+	view->addText("filtered point clouds", 10, 10, "v2_text", v2);
+
+	view->addPointCloud<pcl::PointXYZ>(cloud, "sample cloud", v1);
+	view->addPointCloud<pcl::PointXYZ>(cloud_filtered, "cloud_filtered", v2);
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "sample cloud", v1);
+	view->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0, 1, 0, "cloud_filtered", v2);
+	//view->addCoordinateSystem(1.0);
+	//view->initCameraParameters();
+	while (!view->wasStopped())
+	{
+		view->spinOnce(100);
+		boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+	}
+
+	return 0;
+}
+

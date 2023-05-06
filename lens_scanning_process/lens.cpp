@@ -35,7 +35,7 @@ void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud
         }
         else if (seg_method == "z_seg")
         {
-            if (z0 < 5)   //  分割阈值,  && z0 < -61.44
+            if (z0 < 15)   //  分割阈值,  && z0 < -61.44
             {
                 pointIdxVec.push_back(i);
             }
@@ -311,4 +311,126 @@ std::vector<double> mean_filter(const std::vector<double>& data, int window_size
         filtered_data[i] = sum / count;
     }
     return filtered_data;
+}
+
+// 分段并获得分段索引
+void segment_index_get(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<float> &segment_interval_in, 
+                        vector<vector<int>> &seg_idx_out)
+{   
+    seg_idx_out.resize(12);     // 创建12个区间存放每段的索引
+    for (int i = 0; i < cloud_in->points.size(); ++i)
+    {
+        float x0 = cloud_in->points[i].x;
+
+        for (int k = 0; k < (segment_interval_in.size() - 1); ++k)
+        {
+            if (x0 > segment_interval_in[k] && x0 < segment_interval_in[k+1])
+            {
+                seg_idx_out[k].push_back(i);
+                break;
+            }
+        }
+
+    }
+}
+
+// 圆柱拟合
+void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<int>> &seg_idx_in)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr seg_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    
+
+    for (int i = 0; i < seg_idx_in.size(); ++i)
+    {
+        pcl::copyPointCloud(*cloud_in, seg_idx_in[i], *seg_cloud_ptr);
+
+        //-----------------------------法线估计--------------------------------
+        pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;	// 创建法向量估计对象
+        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
+        n.setSearchMethod(tree);						       // 设置搜索方式
+        n.setInputCloud(seg_cloud_ptr);						   // 设置输入点云
+        n.setKSearch(20);								       // 设置K近邻搜索点的个数
+        pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+        n.compute(*normals);						           // 计算法向量，并将结果保存到normals中
+        //----------------------------圆柱拟合--------------------------------
+        pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> seg;// 创建圆柱体分割对象
+        seg.setInputCloud(seg_cloud_ptr);								// 设置输入点云
+        seg.setInputNormals(normals);								    // 设置输入法向量
+        seg.setOptimizeCoefficients(true);								// 设置对估计的模型系数需要进行优化
+        seg.setModelType(pcl::SACMODEL_CYLINDER);						// 设置分割模型为圆柱体模型
+        seg.setMethodType(pcl::SAC_RANSAC);								// 设置采用RANSAC算法进行参数估计
+        seg.setNormalDistanceWeight(0.8);								// 设置表面法线权重系数
+        seg.setMaxIterations(10000);									// 设置迭代的最大次数
+        seg.setDistanceThreshold(0.3);									// 设置内点到模型距离的最大值
+        seg.setRadiusLimits(10.0, 22.0);								// 设置圆柱模型半径的范围
+        
+        pcl::PointIndices::Ptr inliers_cylinder(new pcl::PointIndices);	// 保存分割结果
+        pcl::ModelCoefficients::Ptr coefficients_cylinder(new pcl::ModelCoefficients);	// 保存圆柱体模型系数
+        seg.segment(*inliers_cylinder, *coefficients_cylinder);			// 执行分割，将分割结果的索引保存到inliers_cylinder中，同时存储模型系数coefficients_cylinder
+    
+        //---------------------------------结果可视化-------------------------
+        boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D viewer"));
+        string cylinder_r;
+        // cylinder_r.assign(coefficients_cylinder->values.begin(), coefficients_cylinder->values.end()); // 字符串可这样赋值
+        for (const auto& value : coefficients_cylinder->values) 
+        {
+            cylinder_r += std::to_string(value) + ", ";
+        }
+
+        viewer->setBackgroundColor(0.7, 0.7, 0.7);
+        viewer->addText("cylinder params: " + cylinder_r, 100, 10, "v1 text");
+        viewer->setWindowName("Cycler Fit " + std::to_string(i));
+        viewer->addPointCloud<pcl::PointXYZ>(seg_cloud_ptr, "cloud");
+        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud");
+        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "cloud");
+        viewer->addCylinder(*coefficients_cylinder, "cycler", 0); // 可视化拟合出来的圆柱模型
+
+        // while (!viewer->wasStopped())
+        // {
+        //     viewer->spinOnce(100);
+        
+        // }
+        viewer->spinOnce(100);
+        if (i == 11)
+        {
+            viewer->spin();
+        }
+    }
+    // viewer->spin();
+    
+}
+
+// 统计滤波
+void statistical_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out)
+{
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud(cloud_in);       
+    sor.setMeanK(50);                  //统计时考虑查询点的邻近点数
+    sor.setStddevMulThresh(1);         //判断是否为离群点的阈值，里边的数字表示标准差的倍数，1个标准差以上就是离群点。
+    // 当判断点的k近邻平均距离(mean distance)大于全局的1倍标准差+平均距离(global distances mean and standard)，则为离群点。
+
+    sor.filter (*cloud_out);           //存储内点
+}
+
+// 高斯滤波
+void gaussian_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out)
+{
+    //-----------基于高斯核函数的卷积滤波实现------------------------
+	pcl::filters::GaussianKernel<pcl::PointXYZ, pcl::PointXYZ> kernel;
+	kernel.setSigma(4);                     // 高斯函数的标准方差，决定函数的宽度
+	kernel.setThresholdRelativeToSigma(4);  // 设置相对Sigma参数的距离阈值
+	kernel.setThreshold(0.05);              // 设置距离阈值，若点间距离大于阈值则不予考虑
+
+	pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+	tree->setInputCloud(cloud_in);
+
+	//---------设置Convolution 相关参数---------------------------
+	pcl::filters::Convolution3D<pcl::PointXYZ, pcl::PointXYZ, pcl::filters::GaussianKernel<pcl::PointXYZ, pcl::PointXYZ>> convolution;
+	convolution.setKernel(kernel);
+	convolution.setInputCloud(cloud_in);
+	convolution.setNumberOfThreads(8);
+	convolution.setSearchMethod(tree);
+	convolution.setRadiusSearch(0.01);
+
+	convolution.convolve(*cloud_out);
 }
