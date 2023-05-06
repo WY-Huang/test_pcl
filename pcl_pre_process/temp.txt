@@ -840,3 +840,54 @@ int main()
 	return 0;
 }
 
+#include <iostream>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <boost/thread/thread.hpp>
+#include <pcl/visualization/pcl_visualizer.h>
+#include <pcl/filters/median_filter.h> // 中值滤波
+
+using namespace std;
+
+int main()
+{
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+	if (pcl::io::loadPCDFile<pcl::PointXYZRGB>("data//office1.pcd", *cloud) == -1)
+	{
+		PCL_ERROR("读取点云失败 \n");
+		return (-1);
+	}
+	//---------------中值滤波-----------------
+    pcl::MedianFilter <pcl::PointXYZRGB> median;
+    median.setInputCloud(cloud);
+    median.setWindowSize(10);          // 设置过滤器的窗口大小
+    median.setMaxAllowedMovement(0.1f);// 一个点允许沿z轴移动的最大距离 
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZRGB>);
+    median.filter(*cloud_filtered);
+	//---------------可视化------------------
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> view(new pcl::visualization::PCLVisualizer("ShowCloud"));
+	view->setWindowName("中值滤波");
+	int v1(0);
+	view->createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+	view->setBackgroundColor(0, 0, 0, v1);
+	view->addText("Raw point clouds", 10, 10, "v1_text", v1);
+	int v2(0);
+	view->createViewPort(0.5, 0.0, 1, 1.0, v2);
+	view->setBackgroundColor(0.1, 0.1, 0.1, v2);
+	view->addText("filtered point clouds", 10, 10, "v2_text", v2);
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
+	pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb_filtered(cloud_filtered);
+	view->addPointCloud<pcl::PointXYZRGB>(cloud, "cloud", v1);
+	view->addPointCloud<pcl::PointXYZRGB>(cloud_filtered, "cloud_filtered", v2);
+
+	//view->addCoordinateSystem(1.0);
+	//view->initCameraParameters();
+	while (!view->wasStopped())
+	{
+		view->spinOnce(100);
+		boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+	}
+
+	return 0;
+}
+

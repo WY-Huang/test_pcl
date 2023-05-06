@@ -343,13 +343,14 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
     for (int i = 0; i < seg_idx_in.size(); ++i)
     {
         pcl::copyPointCloud(*cloud_in, seg_idx_in[i], *seg_cloud_ptr);
+        // save_cloud(seg_cloud_ptr, "/home/wanyel/contours/lens_scanning/20230505/cloud_" + std::to_string(i) + ".pcd");
 
         //-----------------------------法线估计--------------------------------
         pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;	// 创建法向量估计对象
         pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
         n.setSearchMethod(tree);						       // 设置搜索方式
         n.setInputCloud(seg_cloud_ptr);						   // 设置输入点云
-        n.setKSearch(20);								       // 设置K近邻搜索点的个数
+        n.setKSearch(30);								       // 设置K近邻搜索点的个数
         pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
         n.compute(*normals);						           // 计算法向量，并将结果保存到normals中
         //----------------------------圆柱拟合--------------------------------
@@ -359,15 +360,18 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
         seg.setOptimizeCoefficients(true);								// 设置对估计的模型系数需要进行优化
         seg.setModelType(pcl::SACMODEL_CYLINDER);						// 设置分割模型为圆柱体模型
         seg.setMethodType(pcl::SAC_RANSAC);								// 设置采用RANSAC算法进行参数估计
-        seg.setNormalDistanceWeight(0.8);								// 设置表面法线权重系数
+        seg.setNormalDistanceWeight(0.01);								// 设置表面法线权重系数
         seg.setMaxIterations(10000);									// 设置迭代的最大次数
-        seg.setDistanceThreshold(0.3);									// 设置内点到模型距离的最大值
+        seg.setDistanceThreshold(0.25);									// 设置内点到模型距离的最大值
         seg.setRadiusLimits(10.0, 22.0);								// 设置圆柱模型半径的范围
         
-        pcl::PointIndices::Ptr inliers_cylinder(new pcl::PointIndices);	// 保存分割结果
+        pcl::PointIndices::Ptr inliers_cylinder(new pcl::PointIndices);	// 保存分割结果索引
         pcl::ModelCoefficients::Ptr coefficients_cylinder(new pcl::ModelCoefficients);	// 保存圆柱体模型系数
         seg.segment(*inliers_cylinder, *coefficients_cylinder);			// 执行分割，将分割结果的索引保存到inliers_cylinder中，同时存储模型系数coefficients_cylinder
-    
+
+        pcl::PointCloud<pcl::PointXYZ>::Ptr seg_cloud_i(new pcl::PointCloud<pcl::PointXYZ>);    // 保存分割结果
+        pcl::copyPointCloud(*seg_cloud_ptr, *inliers_cylinder, *seg_cloud_i);
+
         //---------------------------------结果可视化-------------------------
         boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D viewer"));
         string cylinder_r;
@@ -380,7 +384,7 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
         viewer->setBackgroundColor(0.7, 0.7, 0.7);
         viewer->addText("cylinder params: " + cylinder_r, 100, 10, "v1 text");
         viewer->setWindowName("Cycler Fit " + std::to_string(i));
-        viewer->addPointCloud<pcl::PointXYZ>(seg_cloud_ptr, "cloud");
+        viewer->addPointCloud<pcl::PointXYZ>(seg_cloud_i, "cloud");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "cloud");
         viewer->addCylinder(*coefficients_cylinder, "cycler", 0); // 可视化拟合出来的圆柱模型
@@ -433,4 +437,79 @@ void gaussian_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointClo
 	convolution.setRadiusSearch(0.01);
 
 	convolution.convolve(*cloud_out);
+}
+
+// 保存点云
+void save_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, string save_path)
+{
+    pcl::PCDWriter writer;
+        
+    writer.write(save_path, *cloud_out, false);
+    cout << "Save segment file success -> " << save_path << endl;
+
+    cout << "The number of segment point clouds: " << cloud_out->points.size() << endl;
+}
+
+// 对所有轮廓进行中值滤波
+void contour_line_median_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, 
+                                pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_ptr)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+    float temp_value_start = 10000.1;
+    float temp_value_end = 10000.2;
+    for (int i = 0; i < cloud_in->points.size(); ++i)
+    {
+        float x0 = cloud_in->points[i].x;
+        if (x0 != temp_value_start)
+        {
+            temp_value_end = temp_value_start;
+            temp_value_start = x0;
+            if (i != 0)
+            {
+                //---------------中值滤波（需要使用有序点云）-----------------
+                // pcl::MedianFilter <pcl::PointXYZ> median;
+                // median.setInputCloud(basic_cloud_ptr);
+                // median.setWindowSize(10);           // 设置过滤器的窗口大小
+                // median.setMaxAllowedMovement(0.1f); // 一个点允许沿z轴移动的最大距离 
+                // pcl::PointCloud<pcl::PointXYZ>::Ptr median_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+                // median.filter(*median_filtered);
+                vector<double> z_value;
+                for (int k = 0; k < basic_cloud_ptr->points.size(); ++k)
+                {
+                    z_value.push_back(basic_cloud_ptr->points[k].z);
+                }
+                vector<double> z_median_value = mean_filter(z_value, 10);
+
+                pcl::PointCloud<pcl::PointXYZ>::Ptr median_filtered(new pcl::PointCloud<pcl::PointXYZ>);
+                for (int j = 0; j < basic_cloud_ptr->points.size(); ++j)
+                {
+                    pcl::PointXYZ basic_point;
+                    basic_point.x = basic_cloud_ptr->points[j].x;
+                    basic_point.y = basic_cloud_ptr->points[j].y;
+                    basic_point.z = float(z_median_value[j]);
+
+                    median_filtered->points.push_back(basic_point);
+                }
+
+                *all_cloud_ptr += * median_filtered;
+            }
+            basic_cloud_ptr->clear();
+        }
+
+        if (cloud_in->points[i].x == temp_value_start)
+        {
+            pcl::PointXYZ basic_point;
+
+            basic_point.x = cloud_in->points[i].x;
+            basic_point.y = cloud_in->points[i].y;
+            basic_point.z = cloud_in->points[i].z;
+
+            basic_cloud_ptr->points.push_back(basic_point);
+        }
+   
+    }
+    cout << "The number of median_fit point clouds: " << all_cloud_ptr->points.size() << endl;
+    pcl::PCDWriter writer;     
+    writer.write("/home/wanyel/contours/lens_scanning/20230505/2023_05_05_14_50_55_877_median.pcd", *all_cloud_ptr, false);
 }

@@ -20,9 +20,9 @@
 #include <pcl/visualization/pcl_plotter.h>
 
 #include <pcl/features/normal_3d.h>	
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/filters/convolution_3d.h>
-
+#include <pcl/filters/statistical_outlier_removal.h>  // 统计滤波
+#include <pcl/filters/convolution_3d.h> // 高斯滤波
+#include <pcl/filters/median_filter.h> // 中值滤波
 
 using namespace std;
 
@@ -55,5 +55,10 @@ std::vector<double> mean_filter(const std::vector<double>& data, int window_size
 void statistical_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out);   // 统计滤波
 
 void gaussian_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out);   // 高斯滤波
+
+void save_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, string save_path);   // 保存点云
+
+void contour_line_median_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, 
+                                pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_ptr);   // 对所有轮廓进行圆拟合
 
 #endif
