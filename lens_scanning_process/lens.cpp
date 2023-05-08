@@ -14,6 +14,17 @@ int read_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, string filename)
 	return 0;
 }
 
+// 保存点云
+void save_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, string save_path)
+{
+    pcl::PCDWriter writer;
+        
+    writer.write(save_path, *cloud_out, false);
+    cout << "Save segment file success -> " << save_path << endl;
+
+    cout << "The number of save point clouds: " << cloud_out->points.size() << endl;
+}
+
 // 根据 xyz 坐标进行阈值分割(直通濾波)
 void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, 
                    string save_path="", string seg_method="")
@@ -317,7 +328,7 @@ std::vector<double> mean_filter(const std::vector<double>& data, int window_size
 void segment_index_get(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<float> &segment_interval_in, 
                         vector<vector<int>> &seg_idx_out)
 {   
-    seg_idx_out.resize(12);     // 创建12个区间存放每段的索引
+    seg_idx_out.resize(segment_interval_in.size() - 1);     // 创建12个区间存放每段的索引
     for (int i = 0; i < cloud_in->points.size(); ++i)
     {
         float x0 = cloud_in->points[i].x;
@@ -343,7 +354,7 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
     for (int i = 0; i < seg_idx_in.size(); ++i)
     {
         pcl::copyPointCloud(*cloud_in, seg_idx_in[i], *seg_cloud_ptr);
-        // save_cloud(seg_cloud_ptr, "/home/wanyel/contours/lens_scanning/20230505/cloud_" + std::to_string(i) + ".pcd");
+        save_cloud(seg_cloud_ptr, "/home/wanyel/contours/lens_scanning/20230427/cloud_" + std::to_string(i) + ".pcd");
 
         //-----------------------------法线估计--------------------------------
         pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;	// 创建法向量估计对象
@@ -383,7 +394,7 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
 
         viewer->setBackgroundColor(0.7, 0.7, 0.7);
         viewer->addText("cylinder params: " + cylinder_r, 100, 10, "v1 text");
-        viewer->setWindowName("Cycler Fit " + std::to_string(i));
+        viewer->setWindowName("Cyclinder Fit " + std::to_string(i));
         viewer->addPointCloud<pcl::PointXYZ>(seg_cloud_i, "cloud");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud");
         viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "cloud");
@@ -395,7 +406,7 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
         
         // }
         viewer->spinOnce(100);
-        if (i == 11)
+        if (i == (seg_idx_in.size()-1))
         {
             viewer->spin();
         }
@@ -416,7 +427,7 @@ void statistical_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::Point
     sor.filter (*cloud_out);           //存储内点
 }
 
-// 高斯滤波
+// 高斯滤波(有序点云)
 void gaussian_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out)
 {
     //-----------基于高斯核函数的卷积滤波实现------------------------
@@ -437,17 +448,6 @@ void gaussian_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointClo
 	convolution.setRadiusSearch(0.01);
 
 	convolution.convolve(*cloud_out);
-}
-
-// 保存点云
-void save_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, string save_path)
-{
-    pcl::PCDWriter writer;
-        
-    writer.write(save_path, *cloud_out, false);
-    cout << "Save segment file success -> " << save_path << endl;
-
-    cout << "The number of segment point clouds: " << cloud_out->points.size() << endl;
 }
 
 // 对所有轮廓进行中值滤波
@@ -479,7 +479,7 @@ void contour_line_median_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in,
                 {
                     z_value.push_back(basic_cloud_ptr->points[k].z);
                 }
-                vector<double> z_median_value = mean_filter(z_value, 10);
+                vector<double> z_median_value = mean_filter(z_value, 5);
 
                 pcl::PointCloud<pcl::PointXYZ>::Ptr median_filtered(new pcl::PointCloud<pcl::PointXYZ>);
                 for (int j = 0; j < basic_cloud_ptr->points.size(); ++j)
