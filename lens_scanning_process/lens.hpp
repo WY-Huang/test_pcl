@@ -40,7 +40,8 @@ void contour_line_circle_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::
 void segment_index_get(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<float> &segment_interval_in, 
                         vector<vector<int>> &seg_idx_out); // 分段并获得分段索引
 
-void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<int>> &seg_idx_in);    // 圆柱拟合
+void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<int>> &seg_idx_in, 
+                    vector<float> &cyfit_d, const vector<float> &real_d);    // 圆柱拟合
 
 int cloud_viewer(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_a, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_b); // 点云可视化
 
@@ -61,4 +62,5 @@ void save_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, string save_path)
 void contour_line_median_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, 
                                 pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_ptr);   // 对所有轮廓进行圆拟合
 
+void cylinder_fit_err(vector<float> &real_d, vector<float> &fit_d); // 计算直径拟合误差
 #endif

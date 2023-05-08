@@ -5,13 +5,13 @@ int main()
 {
     // 读取原始点云
     // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    // string file_name = "/home/wanyel/contours/lens_scanning/20230505/2023_05_05_14_50_55_877.pcd";
+    // string file_name = "/home/wanyel/contours/lens_scanning/20230427/2023_04_27_10_17_02_849.pcd";
     // read_cloud(cloud, file_name);
 
     // 点云直通滤波
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg(new pcl::PointCloud<pcl::PointXYZ>);
     string save_seg = "/home/wanyel/contours/lens_scanning/20230427/2023_04_27_10_17_02_849_zSeg.pcd";
-    // segment_cloud(cloud, cloud_seg, save_seg, "z_seg");
+    // segment_cloud(cloud, cloud_seg, save_seg, "yz_seg");
     read_cloud(cloud_seg, save_seg);
 
     // 逐轮廓中值滤波
@@ -32,10 +32,14 @@ int main()
     // 分段圆柱拟合
     // vector<float> segment_interval = {0, 12.0, 13.5, 22.5, 49.5, 61.5, 65.5, 69.0, 91.5, 95.0, 104.5, 118.0, 130.0};  // 根据x坐标分段
     vector<float> segment_interval = {0, 7.20, 18.0, 25.0, 28.5, 46.2, 48.5, 52.0, 61.0, 82.0, 90.5, 91.5, 130.0};
+    vector<float> real_d = {22.82, 24.02, 34.93, 38.54, 39.80, 38.54, 36.70, 37.72, 36.74, 37.72, 36.70, 37.75};
+    vector<float> fit_d;
     vector<vector<int>> seg_idx;
-    segment_index_get(cloud_seg, segment_interval, seg_idx);
+    segment_index_get(cloud_seg, segment_interval, seg_idx);    // 获取分割索引
 
-    cylinder_fit(cloud_seg, seg_idx);
+    cylinder_fit(cloud_seg, seg_idx, fit_d, real_d);    // 圆柱拟合
+
+    cylinder_fit_err(real_d, fit_d);     // 直径拟合误差
 
     // 单个圆柱拟合
     // vector<float> segment_interval_1 = {61.0, 82.0};

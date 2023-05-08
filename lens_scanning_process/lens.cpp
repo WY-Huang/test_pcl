@@ -44,6 +44,13 @@ void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud
                 pointIdxVec.push_back(i);
             }
         }
+        else if (seg_method == "yz_seg")
+        {
+            if (z0 < 15 && y0 > 36 && y0 < 62)   //  分割阈值,  y:36-62,
+            {
+                pointIdxVec.push_back(i);
+            }
+        }
         else if (seg_method == "z_seg")
         {
             if (z0 < 15)   //  分割阈值,  && z0 < -61.44
@@ -346,15 +353,16 @@ void segment_index_get(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<floa
 }
 
 // 圆柱拟合
-void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<int>> &seg_idx_in)
+void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<int>> &seg_idx_in, 
+                    vector<float> &cyfit_d, const vector<float> &real_d)
 {
     pcl::PointCloud<pcl::PointXYZ>::Ptr seg_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
-    
+    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("Cyclinder Fit"));
 
     for (int i = 0; i < seg_idx_in.size(); ++i)
     {
         pcl::copyPointCloud(*cloud_in, seg_idx_in[i], *seg_cloud_ptr);
-        save_cloud(seg_cloud_ptr, "/home/wanyel/contours/lens_scanning/20230427/cloud_" + std::to_string(i) + ".pcd");
+        // save_cloud(seg_cloud_ptr, "/home/wanyel/contours/lens_scanning/20230427/cloud_" + std::to_string(i) + ".pcd");
 
         //-----------------------------法线估计--------------------------------
         pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;	// 创建法向量估计对象
@@ -366,15 +374,16 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
         n.compute(*normals);						           // 计算法向量，并将结果保存到normals中
         //----------------------------圆柱拟合--------------------------------
         pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> seg;// 创建圆柱体分割对象
+        float r_limit = real_d[i] / 2;
         seg.setInputCloud(seg_cloud_ptr);								// 设置输入点云
         seg.setInputNormals(normals);								    // 设置输入法向量
         seg.setOptimizeCoefficients(true);								// 设置对估计的模型系数需要进行优化
         seg.setModelType(pcl::SACMODEL_CYLINDER);						// 设置分割模型为圆柱体模型
         seg.setMethodType(pcl::SAC_RANSAC);								// 设置采用RANSAC算法进行参数估计
-        seg.setNormalDistanceWeight(0.01);								// 设置表面法线权重系数
+        seg.setNormalDistanceWeight(0.5);								// 设置表面法线权重系数
         seg.setMaxIterations(10000);									// 设置迭代的最大次数
-        seg.setDistanceThreshold(0.25);									// 设置内点到模型距离的最大值
-        seg.setRadiusLimits(10.0, 22.0);								// 设置圆柱模型半径的范围
+        seg.setDistanceThreshold(0.1);									// 设置内点到模型距离的最大值
+        seg.setRadiusLimits(r_limit-1, r_limit+1);								// 设置圆柱模型半径的范围
         
         pcl::PointIndices::Ptr inliers_cylinder(new pcl::PointIndices);	// 保存分割结果索引
         pcl::ModelCoefficients::Ptr coefficients_cylinder(new pcl::ModelCoefficients);	// 保存圆柱体模型系数
@@ -384,28 +393,43 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
         pcl::copyPointCloud(*seg_cloud_ptr, *inliers_cylinder, *seg_cloud_i);
 
         //---------------------------------结果可视化-------------------------
-        boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D viewer"));
-        string cylinder_r;
+        // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D viewer"));
+        string cylinder_p;
+        string cylinder_d;
+        vector<int> rgb;
+        if (i % 2 == 0)     // 点云颜色设置
+        {
+            rgb = {1, 0, 0};
+        }
+        else
+        {
+            rgb = {0, 1, 0};
+        }
+        cylinder_d = std::to_string(2 * (coefficients_cylinder->values[6]));
+        cyfit_d.push_back(std::stof(cylinder_d));
         // cylinder_r.assign(coefficients_cylinder->values.begin(), coefficients_cylinder->values.end()); // 字符串可这样赋值
         for (const auto& value : coefficients_cylinder->values) 
         {
-            cylinder_r += std::to_string(value) + ", ";
+            cylinder_p += std::to_string(value) + ", ";
         }
-
+        // viewer->createViewPort(0, 0, 0.2, 0.5, 0);
         viewer->setBackgroundColor(0.7, 0.7, 0.7);
-        viewer->addText("cylinder params: " + cylinder_r, 100, 10, "v1 text");
-        viewer->setWindowName("Cyclinder Fit " + std::to_string(i));
-        viewer->addPointCloud<pcl::PointXYZ>(seg_cloud_i, "cloud");
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "cloud");
-        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, "cloud");
-        viewer->addCylinder(*coefficients_cylinder, "cycler", 0); // 可视化拟合出来的圆柱模型
+        viewer->addText(std::to_string(i) + " cylinder params: " + cylinder_p + 
+                        " Df=" + cylinder_d + " Dr=" + std::to_string(real_d[i]), 
+                        10, 10*(i+1), "v1 text"+std::to_string(i));
+        // viewer->setWindowName("Cyclinder Fit " + std::to_string(i));
+        viewer->addPointCloud<pcl::PointXYZ>(seg_cloud_i, "cloud"+std::to_string(i));
+
+        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, rgb[0], rgb[1], rgb[2], "cloud"+std::to_string(i));
+        viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "cloud"+std::to_string(i));
+        viewer->addCylinder(*coefficients_cylinder, "cyclinder"+std::to_string(i)); // 可视化拟合出来的圆柱模型
 
         // while (!viewer->wasStopped())
         // {
         //     viewer->spinOnce(100);
         
         // }
-        viewer->spinOnce(100);
+        // viewer->spinOnce(100);
         if (i == (seg_idx_in.size()-1))
         {
             viewer->spin();
@@ -512,4 +536,35 @@ void contour_line_median_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in,
     cout << "The number of median_fit point clouds: " << all_cloud_ptr->points.size() << endl;
     pcl::PCDWriter writer;     
     writer.write("/home/wanyel/contours/lens_scanning/20230505/2023_05_05_14_50_55_877_median.pcd", *all_cloud_ptr, false);
+}
+
+// 计算直径拟合误差
+void cylinder_fit_err(vector<float> &real_d, vector<float> &fit_d)
+{
+    // 打印real_d
+    std::cout << "real_d: " ;
+    for (auto i = real_d.begin(); i != real_d.end(); i++) 
+    {
+        std::cout << *i << ' ';  
+    }
+    std::cout << endl;
+
+    // 打印fit_d
+    std::cout << "fit_d: " ;
+    for (auto i = fit_d.begin(); i != fit_d.end(); i++) 
+    {
+        std::cout << *i << ' ';  
+    }
+    std::cout << endl;
+    
+    // 打印fit_err
+    vector<float> fit_err;
+    std::cout << "fit_err: " ;
+    for (int i = 0; i < fit_d.size(); ++i)
+    {
+        fit_err.push_back(fit_d[i] - real_d[i]);
+        std::cout << fit_err[i] << ' ';
+    }
+    std::cout << endl;
+
 }
