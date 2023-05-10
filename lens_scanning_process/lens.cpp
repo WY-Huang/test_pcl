@@ -14,7 +14,7 @@ int read_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, string filename)
 	return 0;
 }
 
-// 保存点云
+// 保存pcd点云
 void save_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, string save_path)
 {
     pcl::PCDWriter writer;
@@ -72,7 +72,7 @@ void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud
     cout << "The number of segment point clouds: " << cloud_out->points.size() << endl;
 }
 
-// 抽取所有轮廓的x坐标
+// 抽取所有轮廓的x坐标（逐轮廓）
 void contour_line_coor_find(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<float> &contour_x_coor)
 {
     float temp_value = 10000.1;
@@ -88,7 +88,7 @@ void contour_line_coor_find(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector
     }
 }
 
-// 对所有轮廓进行圆拟合
+// 对所有轮廓进行圆拟合（逐轮廓）
 void contour_line_circle_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_ptr,
                              vector<vector<float>> &coefficient)
 {
@@ -377,12 +377,12 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
         float r_limit = real_d[i] / 2;
         seg.setInputCloud(seg_cloud_ptr);								// 设置输入点云
         seg.setInputNormals(normals);								    // 设置输入法向量
-        seg.setOptimizeCoefficients(true);								// 设置对估计的模型系数需要进行优化
+        seg.setOptimizeCoefficients(true);								// 设置对估计的模型系数需要进行优化（增加耗时）
         seg.setModelType(pcl::SACMODEL_CYLINDER);						// 设置分割模型为圆柱体模型
         seg.setMethodType(pcl::SAC_RANSAC);								// 设置采用RANSAC算法进行参数估计
         seg.setNormalDistanceWeight(0.5);								// 设置表面法线权重系数
         seg.setMaxIterations(10000);									// 设置迭代的最大次数
-        seg.setDistanceThreshold(0.1);									// 设置内点到模型距离的最大值
+        seg.setDistanceThreshold(0.04);									// 设置内点到模型距离的最大值
         seg.setRadiusLimits(r_limit-1, r_limit+1);								// 设置圆柱模型半径的范围
         
         pcl::PointIndices::Ptr inliers_cylinder(new pcl::PointIndices);	// 保存分割结果索引
