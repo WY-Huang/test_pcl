@@ -29,6 +29,8 @@ using namespace std;
 
 int read_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, string filename); // 读取数据
 
+void save_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, string save_path);   // 保存点云
+
 void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, 
                     string save_path, string seg_method);   // 直通滤波
 
@@ -57,10 +59,10 @@ void statistical_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::Point
 
 void gaussian_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out);   // 高斯滤波
 
-void save_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_out, string save_path);   // 保存点云
-
 void contour_line_median_filter(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, 
                                 pcl::PointCloud<pcl::PointXYZ>::Ptr all_cloud_ptr);   // 对所有轮廓进行圆拟合
 
 void cylinder_fit_err(vector<float> &real_d, vector<float> &fit_d); // 计算直径拟合误差
+
+
 #endif
