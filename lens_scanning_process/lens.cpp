@@ -396,6 +396,7 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
         // boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer("3D viewer"));
         string cylinder_p;
         string cylinder_d;
+        string err_d;
         vector<int> rgb;
         if (i % 2 == 0)     // 点云颜色设置
         {
@@ -412,10 +413,11 @@ void cylinder_fit(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, vector<vector<in
         {
             cylinder_p += std::to_string(value) + ", ";
         }
+        err_d = std::to_string(real_d[i] - (2 * (coefficients_cylinder->values[6])));
         // viewer->createViewPort(0, 0, 0.2, 0.5, 0);
         viewer->setBackgroundColor(0.7, 0.7, 0.7);
         viewer->addText(std::to_string(i) + " cylinder params: " + cylinder_p + 
-                        " Df=" + cylinder_d + " Dr=" + std::to_string(real_d[i]), 
+                        " Df=" + cylinder_d + " Dr=" + std::to_string(real_d[i]) + " Error_d: " + err_d, 
                         10, 10*(i+1), "v1 text"+std::to_string(i));
         // viewer->setWindowName("Cyclinder Fit " + std::to_string(i));
         viewer->addPointCloud<pcl::PointXYZ>(seg_cloud_i, "cloud"+std::to_string(i));
