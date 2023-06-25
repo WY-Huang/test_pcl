@@ -89,13 +89,20 @@ void segment_cloud(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in, pcl::PointCloud
 }
 
 
-// 计算vector的标准差
+// 计算vector的均值、方差、标准差，最值
 float calculateStandardDeviation(const std::vector<float>& data) 
 {
     int n = data.size();
+    cout << "=======================================================" << endl;
     cout << "ContourNums: " << n << endl;
 
     float sum = 0.0, mean, variance = 0.0;
+
+    // 计算最大值和最小值
+    float maxValue = *max_element(data.begin(), data.end());
+    float minValue = *min_element(data.begin(), data.end());
+    cout << "maxValue: " << maxValue << " mm" << endl;
+    cout << "minValue: " << minValue << " mm" << endl;
 
     // 计算vector元素的总和
     for (float val : data) {
@@ -111,6 +118,7 @@ float calculateStandardDeviation(const std::vector<float>& data)
         variance += pow(val - mean, 2);
     }
     variance /= n;
+    cout << "variance: " << variance << " mm" << endl;
 
     // 计算标准差
     float standardDeviation = sqrt(variance);
@@ -188,21 +196,80 @@ void cloud_concatenate()
     
 }
 
+// 两个直线点云的距离计算（逐点计算均值）
+void cloud_z_mean(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_a, pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_b)
+{
+    std::vector<float> DisZ;
+    for (int i = 0; i < cloud_a->points.size(); ++i)
+    {
+        for (int k = 0; k < cloud_b->points.size(); ++k)
+        {
+            float dis_z = cloud_b->points[k].z - cloud_a->points[i].z;
+            DisZ.push_back(dis_z);
+        }
+    }
+
+    float standardDeviation = calculateStandardDeviation(DisZ);
+}
+
+// 对所有直线轮廓进行长度计算，按X方向的轮廓，计算轮廓起始点和终点间的距离
+void straight_line_length_cal(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_in)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr basic_cloud_ptr(new pcl::PointCloud<pcl::PointXYZ>);
+    vector<float> diff_all_line;
+
+    float temp_value_start = 10000.1;
+    float temp_value_end = 10000.2;
+    for (int i = 0; i < cloud_in->points.size(); ++i)
+    {
+        float x0 = cloud_in->points[i].x;
+        if (x0 != temp_value_start)
+        {
+            temp_value_end = temp_value_start;
+            temp_value_start = x0;
+            // 单个轮廓的处理操作
+            if (i != 0)     
+            {
+                // float y_begin = basic_cloud_ptr->begin()->y;
+                // float y_end = (basic_cloud_ptr->end()-1)->y;
+                float y_value = basic_cloud_ptr->begin()->y - (basic_cloud_ptr->end()-1)->y;
+                diff_all_line.push_back(y_value);
+            }
+            basic_cloud_ptr->clear();
+        }
+
+        if (cloud_in->points[i].x == temp_value_start)
+        {
+            pcl::PointXYZ basic_point;
+
+            basic_point.x = cloud_in->points[i].x;
+            basic_point.y = cloud_in->points[i].y;
+            basic_point.z = cloud_in->points[i].z;
+
+            basic_cloud_ptr->points.push_back(basic_point);
+        }
+   
+    }
+    // 均值及标准差计算
+    float mean_all = calculateStandardDeviation(diff_all_line);
+
+}
+
 int main()
 {
     // 读取原始点云
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_a(new pcl::PointCloud<pcl::PointXYZ>);
-    string file_a = "/home/wanyel/contours/Calibration_block/precision_calculate/2023_05_12_09_11_18_972_move.pcd";
+    string file_a = "/home/wanyel/USER_DATA/2023_06_25_10_33_34_798_30mm.pcd";
     read_cloud(cloud_a, file_a);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_b(new pcl::PointCloud<pcl::PointXYZ>);
-    string file_b = "/home/wanyel/contours/Calibration_block/precision_calculate/2023_05_12_10_44_35_cloud_all_s.pcd";
+    string file_b = "/home/wanyel/USER_DATA/2023_06_25_10_33_34_798_60mm.pcd";
     read_cloud(cloud_b, file_b);
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_all(new pcl::PointCloud<pcl::PointXYZ>);
-    *cloud_all = (*cloud_a) + (*cloud_b);
-    string file_all = "/home/wanyel/contours/Calibration_block/precision_calculate/2023_05_12_merge.pcd";
-    save_cloud(cloud_all, file_all);
+    // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_all(new pcl::PointCloud<pcl::PointXYZ>);
+    // *cloud_all = (*cloud_a) + (*cloud_b);
+    // string file_all = "/home/wanyel/contours/Calibration_block/precision_calculate/2023_05_12_merge.pcd";
+    // save_cloud(cloud_all, file_all);
 
     // 点云直通滤波
     // pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_seg(new pcl::PointCloud<pcl::PointXYZ>);
@@ -214,4 +281,15 @@ int main()
 
     // 点云合并
     // cloud_concatenate();
+
+    // 计算两个直线点云的平均距离
+    // cloud_z_mean(cloud_a, cloud_b);
+
+    // Y向平均长度
+    // straight_line_length_cal(cloud_a);
+    // straight_line_length_cal(cloud_b);
+
+    // z均值计算
+    contour_line_mean_cal(cloud_a);
+    contour_line_mean_cal(cloud_b);
 }
